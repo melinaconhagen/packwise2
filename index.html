@@ -408,39 +408,37 @@ function calcDays(){
 }
 function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening'}
 
-// AI via Google Gemini — genuinely free, 1500 requests/day, no credit card needed
-// Get key at aistudio.google.com/app/apikey (sign in with Google, click Create API Key)
+// AI via Anthropic Claude — get key at console.anthropic.com (~$5 one-time top-up)
 async function callAI(prompt, maxTokens=2500){
   const ak = localStorage.getItem('pw_api') || '';
   if(!ak) throw new Error('NO_KEY');
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${ak}`;
   let res;
   try{
-    res = await fetch(url, {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ak,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
-        contents:[{parts:[{text: prompt}]}],
-        generationConfig:{maxOutputTokens: maxTokens, temperature: 0.7}
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: maxTokens,
+        messages: [{role:'user', content: prompt}]
       })
     });
   }catch(e){ throw new Error('Network error — check your connection.'); }
-  if(res.status===400||res.status===403||res.status===401){
-    let m='INVALID_KEY';
-    try{const j=await res.json();m=j.error?.message||m;}catch(e){}
-    throw new Error('INVALID_KEY: '+m);
-  }
+  if(res.status===401) throw new Error('INVALID_KEY');
   if(!res.ok){ let m='HTTP '+res.status; try{const j=await res.json();m=j.error?.message||m;}catch(e){} throw new Error(m); }
   const json = await res.json();
-  if(json.error) throw new Error(json.error.message||'Gemini error');
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-  if(!text) throw new Error('Empty response from Gemini');
-  return text;
+  if(json.error) throw new Error(json.error.message||'API error');
+  return json.content[0].text;
 }
 function aiErrMsg(e){
-  if(e.message==='NO_KEY') return `<b>Add your free Gemini API key in ⚙️ Settings</b> to enable AI features.<br><small>Get one free (no card needed) at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--pink-dark)">aistudio.google.com</a> → sign in with Google → Create API Key.</small>`;
-  if(e.message.startsWith('INVALID_KEY')) return `API key invalid or expired — go to <b>⚙️ Settings</b> to paste a new one.`;
-  if(e.message.includes('Network')) return `Network error — check your internet connection and try again.`;
+  if(e.message==='NO_KEY') return `<b>Add your Anthropic API key in ⚙️ Settings</b> to enable AI.<br><small>Get one at <a href="https://console.anthropic.com" target="_blank" style="color:var(--pink-dark)">console.anthropic.com</a> — a $5 top-up lasts hundreds of requests.</small>`;
+  if(e.message==='INVALID_KEY') return `API key invalid — update it in <b>⚙️ Settings</b>.`;
+  if(e.message.includes('Network')) return `Network error — check your connection and try again.`;
   return `Error: `+e.message;
 }
 
@@ -618,7 +616,7 @@ const App={
       document.getElementById('imp-txt').value='';
       this.toast(`Added ${items.length} items to your closet!`);
       if(this.view==='closet')this.rCloset();
-    }catch(e){this.toast(e.message==='NO_KEY'?'Add your free Gemini API key in ⚙️ Settings first!':'Import failed: '+e.message);}
+    }catch(e){this.toast(e.message==='NO_KEY'?'Add your Anthropic API key in ⚙️ Settings first!':'Import failed: '+e.message);}
     btn.textContent='Import Items ✦';btn.disabled=false;
   },
 
@@ -862,17 +860,17 @@ const App={
         <div class="greeting-sub">Configure your PackWise account</div>
       </div></div>
       <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.8rem;max-width:520px">
-        <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:.5rem">✨ AI Features — 100% Free</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:.5rem">✨ AI Features</div>
         <div style="background:var(--pink-pale);border-radius:10px;padding:1rem;margin-bottom:1.2rem;font-size:13px;color:var(--text2);line-height:1.7">
-          PackWise uses <b>Google Gemini</b> for AI — free with no credit card needed (1,500 requests/day).<br><br>
-          <b>How to get your free key (2 minutes):</b><br>
-          1️⃣ Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--pink-dark);font-weight:600">aistudio.google.com/app/apikey ↗</a><br>
-          2️⃣ Sign in with your Google account<br>
-          3️⃣ Click <b>Create API Key</b> → copy the key<br>
-          4️⃣ Paste it in the box below and click Save
+          PackWise uses <b>Anthropic Claude</b> for AI (the same AI as this chat!).<br><br>
+          <b>How to set it up:</b><br>
+          1️⃣ Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--pink-dark);font-weight:600">console.anthropic.com ↗</a> and sign up<br>
+          2️⃣ Add $5 of credits (one-time, lasts hundreds of packing lists — each costs fractions of a cent)<br>
+          3️⃣ Go to <b>API Keys</b> → <b>Create Key</b> → copy it<br>
+          4️⃣ Paste it below and click Save
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="password" id="ak-field" value="${ak}" placeholder="AIza..." style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
+          <input type="password" id="ak-field" value="${ak}" placeholder="sk-ant-..." style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
           <button class="btn-accent" style="width:auto;padding:11px 20px;white-space:nowrap" onclick="App.saveKey()">Save Key</button>
           ${ak?'<button class="btn-outline" style="white-space:nowrap" onclick="App.clearKey()">Clear</button>':''}
         </div>
