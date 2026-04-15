@@ -1,170 +1,340 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PackWise — Travel Smart</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧳</text></svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PackWise — Pack Smart. Travel Light.</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#FAF7F5;
+  --surface:#FFFFFF;
+  --surface2:#FDF5F5;
+  --pink:#E8A0A8;
+  --pink-light:#F5D6DA;
+  --pink-pale:#FDF0F2;
+  --pink-dark:#C4717A;
+  --rose:#D4849C;
+  --mauve:#9E7B8A;
+  --sage:#8FAF9A;
+  --sage-light:#C8DDD0;
+  --gold:#C9A46A;
+  --text:#2D2428;
+  --text2:#7A6068;
+  --text3:#B09AA0;
+  --border:#EDD8DC;
+  --border2:#E5C8CE;
+  --radius:14px;
+  --radius-sm:10px;
+  --shadow:0 2px 16px rgba(180,100,120,0.08);
+  --shadow-md:0 8px 32px rgba(180,100,120,0.14);
+}
+
+body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6}
+
+/* ── PAGES ── */
+.page{display:none;min-height:100vh}
+.page.active{display:flex;flex-direction:column}
+
+/* ══════════ AUTH ══════════ */
+#auth-page{background:linear-gradient(145deg,#FDF0F2 0%,#F5EDF8 50%,#EDF2F8 100%);align-items:center;justify-content:center;padding:1.5rem}
+.auth-wrap{width:100%;max-width:400px}
+.auth-brand{text-align:center;margin-bottom:2rem}
+.auth-brand-name{font-size:2.2rem;font-weight:700;letter-spacing:-0.03em;color:var(--text);margin-bottom:4px}
+.auth-brand-name span{color:var(--pink-dark)}
+.auth-tagline{font-size:13px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase}
+.auth-card{background:var(--surface);border-radius:20px;padding:2rem;box-shadow:0 20px 60px rgba(180,100,120,0.12),0 4px 16px rgba(180,100,120,0.06)}
+.tab-row{display:flex;background:var(--pink-pale);border-radius:10px;padding:3px;margin-bottom:1.5rem;gap:3px}
+.tab-btn{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--mauve);transition:.2s;font-family:inherit}
+.tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(180,100,120,0.12)}
+.form-label{display:block;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text2);margin-bottom:6px;margin-top:1rem}
+.form-input{width:100%;padding:13px 15px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--pink)}
+.form-input::placeholder{color:var(--text3)}
+.btn-primary{display:block;width:100%;padding:14px;background:var(--text);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit;margin-top:1.2rem;letter-spacing:0.02em}
+.btn-primary:hover{background:var(--pink-dark);transform:translateY(-1px);box-shadow:0 4px 16px rgba(196,113,122,0.3)}
+.btn-accent{display:block;width:100%;padding:14px;background:var(--pink-dark);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit;letter-spacing:0.02em}
+.btn-accent:hover{background:#b5636b;transform:translateY(-1px)}
+.btn-outline{padding:10px 20px;background:transparent;color:var(--text);border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-outline:hover{border-color:var(--pink);background:var(--pink-pale)}
+.err{color:#c0566b;font-size:13px;margin-top:10px;min-height:18px}
+
+/* ══════════ APP LAYOUT ══════════ */
+#app-page.active{flex-direction:row}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.5rem 1rem;flex-shrink:0;min-height:100vh;position:sticky;top:0;height:100vh}
+.sidebar-brand{font-size:1.4rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);padding:0.5rem 0.75rem 1.25rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem}
+.sidebar-brand span{color:var(--pink-dark)}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:transparent;border-radius:var(--radius-sm);color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;transition:.15s;font-family:inherit;text-align:left}
+.nav-btn:hover{background:var(--pink-pale);color:var(--text)}
+.nav-btn.active{background:var(--pink-pale);color:var(--pink-dark)}
+.nav-btn .ico{font-size:16px;width:22px;text-align:center}
+.sidebar-bottom{margin-top:auto;border-top:1px solid var(--border);padding-top:1rem}
+.user-row{display:flex;align-items:center;gap:9px;padding:8px 10px;color:var(--text2);font-size:13px}
+.avatar{width:28px;height:28px;background:var(--pink-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--pink-dark);flex-shrink:0}
+.main{flex:1;overflow-y:auto;padding:2.5rem 3rem;max-width:900px}
+
+/* ══════════ HOME ══════════ */
+.greeting-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;gap:1rem}
+.greeting{font-size:2rem;font-weight:700;letter-spacing:-0.03em;color:var(--text)}
+.greeting span{color:var(--pink-dark)}
+.greeting-sub{font-size:14px;color:var(--text2);margin-top:4px}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:2rem}
+.stat-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.2rem 1.4rem}
+.stat-num{font-size:2rem;font-weight:700;letter-spacing:-0.04em;color:var(--text);line-height:1}
+.stat-num.accent{color:var(--gold)}
+.stat-label{font-size:13px;color:var(--text2);margin-top:6px}
+.next-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.4rem}
+.next-label{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:1rem}
+.trips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:1rem}
+.trip-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.3rem;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+.trip-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--pink),var(--rose),var(--mauve))}
+.trip-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--border2)}
+.trip-dest{font-size:1.15rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin-bottom:4px}
+.trip-meta{font-size:12px;color:var(--text3);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:10px}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{background:var(--pink-pale);color:var(--pink-dark);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.add-trip-tile{background:transparent;border-radius:var(--radius);border:1.5px dashed var(--border2);padding:1.3rem;cursor:pointer;transition:.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text3);font-size:13px;min-height:120px;text-align:center}
+.add-trip-tile:hover{border-color:var(--pink);color:var(--pink-dark);background:var(--pink-pale)}
+.add-trip-tile .plus{font-size:1.6rem;line-height:1}
+.empty-next{text-align:center;padding:2rem;color:var(--text3)}
+.empty-next .emo{font-size:2.5rem;margin-bottom:10px}
+.empty-next strong{display:block;font-size:15px;color:var(--text2);margin-bottom:4px}
+
+/* ══════════ API BANNER ══════════ */
+.api-banner{background:var(--pink-pale);border:1px solid var(--pink-light);border-radius:var(--radius-sm);padding:1rem 1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text2)}
+.api-banner input{flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);font-size:13px;font-family:inherit;outline:none;background:white}
+.api-banner input:focus{border-color:var(--pink)}
+.api-banner button{padding:8px 14px;background:var(--pink-dark);color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+
+/* ══════════ SECTION HEADERS ══════════ */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.section-title{font-size:1.1rem;font-weight:700;letter-spacing:-0.02em;color:var(--text)}
+
+/* ══════════ CLOSET ══════════ */
+.closet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.cloth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;text-align:center;cursor:pointer;transition:.2s;position:relative}
+.cloth-card:hover{border-color:var(--pink);background:var(--pink-pale)}
+.cloth-card.dirty{opacity:.55}
+.cloth-card.dirty::after{content:'🧺';position:absolute;top:6px;right:7px;font-size:12px}
+.cloth-emo{font-size:2.2rem;margin-bottom:6px}
+.cloth-name{font-size:12px;font-weight:600;color:var(--text)}
+.cloth-type{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px}
+.add-cloth-tile{background:transparent;border:1.5px dashed var(--border2);border-radius:var(--radius-sm);padding:1rem;text-align:center;cursor:pointer;transition:.2s;color:var(--text3);font-size:12px;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.add-cloth-tile:hover{border-color:var(--pink);color:var(--pink-dark);background:var(--pink-pale)}
+.import-hint{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:13px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.import-hint button{margin-left:auto;flex-shrink:0}
+
+/* ══════════ LAUNDRY ══════════ */
+.laundry-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;min-height:180px}
+.laundry-chips{display:flex;flex-wrap:wrap;gap:8px}
+.laundry-chip{background:var(--pink-pale);border:1px solid var(--border2);border-radius:30px;padding:6px 12px 6px 10px;font-size:13px;display:flex;align-items:center;gap:7px}
+.laundry-x{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0;transition:color .15s}
+.laundry-x:hover{color:var(--pink-dark)}
+.laundry-empty{text-align:center;padding:2.5rem;color:var(--text3)}
+.laundry-empty .emo{font-size:2.5rem;margin-bottom:8px}
+.tip-box{background:var(--pink-pale);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.2rem;margin-top:1.2rem;font-size:13px;color:var(--text2)}
+
+/* ══════════ PACKING ══════════ */
+.packing-layout{display:grid;grid-template-columns:1fr 270px;gap:1.5rem;align-items:start}
+.day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.3rem;margin-bottom:10px}
+.day-head{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.day-weather{font-size:12px;color:var(--text3);font-weight:400}
+.outfit-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bg)}
+.outfit-row:last-child{border-bottom:none}
+.outfit-emo{font-size:1.1rem;width:26px;text-align:center}
+.outfit-name{flex:1;font-size:14px;color:var(--text)}
+.outfit-dirty{font-size:10px;color:var(--pink-dark);background:var(--pink-pale);padding:2px 8px;border-radius:10px}
+.edit-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;transition:color .15s}
+.edit-btn:hover{color:var(--mauve)}
+.side-widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.3rem;margin-bottom:12px}
+.widget-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px}
+.weather-big{background:linear-gradient(135deg,var(--text) 0%,#4a3040 100%);border-radius:var(--radius);padding:1.2rem;color:white;margin-bottom:12px}
+.weather-loc{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:.6;margin-bottom:4px}
+.weather-temp{font-size:2rem;font-weight:700;letter-spacing:-0.04em;margin-bottom:2px}
+.weather-desc{font-size:12px;opacity:.7}
+.cap-bar{height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin:8px 0}
+.cap-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--sage),var(--sage-light));transition:width .5s}
+.cap-fill.warn{background:linear-gradient(90deg,var(--gold),#e8c87a)}
+.cap-fill.over{background:linear-gradient(90deg,var(--pink-dark),var(--rose))}
+.cap-text{font-size:12px;color:var(--text2)}
+.gen-btn-wrap{text-align:center;padding:2rem}
+.gen-empty-icon{font-size:2.5rem;margin-bottom:10px}
+.gen-empty-title{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:6px}
+.gen-empty-sub{font-size:13px;color:var(--text2);margin-bottom:1.2rem}
+
+/* ══════════ MODALS ══════════ */
+.modal-backdrop{position:fixed;inset:0;background:rgba(45,36,40,.45);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.modal-backdrop.hidden{display:none}
+.modal{background:var(--surface);border-radius:20px;padding:2rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25)}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.25rem}
+.modal-title{font-size:1.5rem;font-weight:700;letter-spacing:-0.03em;color:var(--text)}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);line-height:1;padding:2px}
+.modal-close:hover{color:var(--text)}
+.modal-sub{font-size:13px;color:var(--text3);margin-bottom:1.5rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-input-sm{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
+.form-input-sm:focus{border-color:var(--pink)}
+.form-input-sm::placeholder{color:var(--text3)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px}
+.chip{padding:7px 14px;border-radius:20px;font-size:13px;border:1.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:.15s;font-family:inherit}
+.chip:hover{border-color:var(--pink);color:var(--text)}
+.chip.on{background:var(--text);color:white;border-color:var(--text)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.5rem}
+.modal-actions .btn-accent{width:auto;padding:11px 26px}
+
+/* ══════════ LOADING ══════════ */
+.ai-load{display:flex;align-items:center;gap:10px;color:var(--text2);font-size:14px;padding:1.5rem}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--pink-dark);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════ TOAST ══════════ */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:white;padding:.9rem 1.3rem;border-radius:12px;font-size:14px;max-width:300px;z-index:200;transform:translateY(80px);opacity:0;transition:.3s;box-shadow:0 8px 28px rgba(0,0,0,.25)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.warn{border-left:4px solid var(--pink)}
+
+/* ══════════ RESPONSIVE ══════════ */
+@media(max-width:860px){
+  .sidebar{display:none}
+  .main{padding:1.5rem}
+  .packing-layout{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:500px){
+  .greeting{font-size:1.5rem}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
 
-<!-- ═══════════════ AUTH PAGE ═══════════════ -->
+<!-- ═══════ AUTH ═══════ -->
 <div id="auth-page" class="page active">
-  <div class="auth-page">
-    <div class="auth-card">
-      <div class="auth-logo">PackWise</div>
-      <div class="auth-tagline">Pack smart. Travel light.</div>
-
-      <div class="tab-row">
-        <button class="tab-btn active" id="auth-tab-signin">Sign In</button>
-        <button class="tab-btn" id="auth-tab-signup">Create Account</button>
+  <div style="background:linear-gradient(145deg,#FDF0F2 0%,#F5EDF8 50%,#EDF2F8 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
+    <div class="auth-wrap">
+      <div class="auth-brand">
+        <div class="auth-brand-name">Pack<span>Wise</span></div>
+        <div class="auth-tagline">Pack smart · Travel light</div>
       </div>
+      <div class="auth-card">
+        <div class="tab-row">
+          <button class="tab-btn active" id="tab-in" onclick="switchTab('in')">Sign In</button>
+          <button class="tab-btn" id="tab-up" onclick="switchTab('up')">Create Account</button>
+        </div>
 
-      <!-- SIGN IN -->
-      <div id="signin-form">
-        <div class="form-group">
+        <div id="form-in">
           <label class="form-label">Email</label>
           <input class="form-input" type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="form-group">
           <label class="form-label">Password</label>
-          <input class="form-input" type="password" id="si-pass" placeholder="••••••••" autocomplete="current-password">
+          <input class="form-input" type="password" id="si-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.signIn()">
+          <button class="btn-primary" onclick="App.signIn()">Sign In</button>
         </div>
-        <button class="btn-primary" onclick="App.signIn()">Sign In</button>
-      </div>
 
-      <!-- SIGN UP -->
-      <div id="signup-form" style="display:none;">
-        <div class="form-group">
+        <div id="form-up" style="display:none">
           <label class="form-label">Email</label>
           <input class="form-input" type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="form-group">
           <label class="form-label">Username</label>
-          <input class="form-input" type="text" id="su-username" placeholder="e.g. Sophie" autocomplete="username">
-        </div>
-        <div class="form-group">
+          <input class="form-input" type="text" id="su-user" placeholder="e.g. Sophie" autocomplete="username">
           <label class="form-label">Password</label>
-          <input class="form-input" type="password" id="su-pass" placeholder="At least 6 characters" autocomplete="new-password">
+          <input class="form-input" type="password" id="su-pass" placeholder="At least 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')App.signUp()">
+          <button class="btn-primary" onclick="App.signUp()">Create Account</button>
         </div>
-        <button class="btn-primary" onclick="App.signUp()">Create Account</button>
+        <div class="err" id="auth-err"></div>
       </div>
-
-      <div class="error-msg" id="auth-error"></div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════ APP PAGE ═══════════════ -->
+<!-- ═══════ APP ═══════ -->
 <div id="app-page" class="page">
-  <div class="app-layout">
-
-    <!-- SIDEBAR -->
-    <nav class="sidebar">
-      <div class="sidebar-logo">PackWise</div>
-
-      <button class="nav-item" data-view="home" onclick="App.navigate('home')">
-        <span class="nav-icon">🏠</span> Home
-      </button>
-      <button class="nav-item" data-view="closet" onclick="App.navigate('closet')">
-        <span class="nav-icon">👗</span> My Closet
-      </button>
-      <button class="nav-item" data-view="laundry" onclick="App.navigate('laundry')">
-        <span class="nav-icon">🧺</span> Laundry Basket
-      </button>
-
-      <div class="sidebar-bottom">
-        <div class="sidebar-user">
-          <div class="user-avatar" id="nav-avatar">?</div>
-          <span id="nav-username">User</span>
-        </div>
-        <button class="nav-item" onclick="App.signOut()" style="color:var(--taupe);">
-          <span class="nav-icon">↩</span> Sign Out
-        </button>
+  <nav class="sidebar">
+    <div class="sidebar-brand">Pack<span>Wise</span></div>
+    <button class="nav-btn active" data-v="home" onclick="App.go('home')"><span class="ico">🏠</span>Home</button>
+    <button class="nav-btn" data-v="closet" onclick="App.go('closet')"><span class="ico">👗</span>My Closet</button>
+    <button class="nav-btn" data-v="laundry" onclick="App.go('laundry')"><span class="ico">🧺</span>Laundry Basket</button>
+    <div class="sidebar-bottom">
+      <div class="user-row">
+        <div class="avatar" id="nav-av">?</div>
+        <span id="nav-name">User</span>
       </div>
-    </nav>
-
-    <!-- MAIN -->
-    <main class="main-content" id="main-content">
-      <!-- Rendered by JS -->
-    </main>
-
-  </div>
+      <button class="nav-btn" onclick="App.out()"><span class="ico">↩</span>Sign Out</button>
+    </div>
+  </nav>
+  <main class="main" id="main"></main>
 </div>
 
-<!-- ═══════════════ MODALS ═══════════════ -->
+<!-- ═══════ MODALS ═══════ -->
 
-<!-- ADD TRIP -->
-<div id="add-trip-modal" class="modal-backdrop hidden">
+<!-- Add Trip -->
+<div id="m-trip" class="modal-backdrop hidden">
   <div class="modal">
-    <div class="modal-title">Plan a New Trip</div>
-    <div class="modal-subtitle">Tell us about your adventure</div>
-
-    <div class="form-group">
-      <label class="form-label">Destination</label>
-      <input class="form-input" id="trip-dest" placeholder="e.g. Barcelona, Spain">
+    <div class="modal-head">
+      <div class="modal-title">Plan a New Trip</div>
+      <button class="modal-close" onclick="closeM('m-trip')">×</button>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Duration (days)</label>
-        <input class="form-input-sm" type="number" id="trip-duration" placeholder="7" min="1" max="60">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Start Date</label>
-        <input class="form-input-sm" type="date" id="trip-start">
-      </div>
-    </div>
+    <div class="modal-sub">Tell us about your adventure</div>
 
-    <div class="form-group">
-      <label class="form-label">Activities</label>
-      <div class="checkbox-group">
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🏖️ Beach</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🏔️ Hiking</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🍽️ Fine dining</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🎭 Nightlife</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🏛️ Sightseeing</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">💼 Business</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🧘 Wellness</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🎿 Skiing</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🚴 Cycling</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🛕 Culture</button>
+    <label class="form-label">Destination</label>
+    <input class="form-input" id="t-dest" placeholder="e.g. Paris, France">
+
+    <div class="form-row" style="margin-top:1rem">
+      <div>
+        <label class="form-label">Departure date</label>
+        <input class="form-input-sm" type="date" id="t-start">
+      </div>
+      <div>
+        <label class="form-label">Return date</label>
+        <input class="form-input-sm" type="date" id="t-end" onchange="calcDays()">
       </div>
     </div>
+    <div id="days-preview" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
 
-    <div class="form-group">
-      <label class="form-label">Suitcase Size (cm) — Length × Width × Height</label>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input class="form-input-sm" type="number" id="suit-l" placeholder="55" style="width:70px;">
-        <span style="color:var(--taupe);">×</span>
-        <input class="form-input-sm" type="number" id="suit-w" placeholder="35" style="width:70px;">
-        <span style="color:var(--taupe);">×</span>
-        <input class="form-input-sm" type="number" id="suit-h" placeholder="20" style="width:70px;">
-        <span style="font-size:12px;color:var(--taupe);">= <span id="vol-display">38.5L</span></span>
-      </div>
+    <label class="form-label" style="margin-top:1rem">Activities (select all that apply)</label>
+    <div class="chips" id="act-chips">
+      <button class="chip" onclick="toggleChip(this)">🏖️ Beach</button>
+      <button class="chip" onclick="toggleChip(this)">🏔️ Hiking</button>
+      <button class="chip" onclick="toggleChip(this)">🎭 Nightlife</button>
+      <button class="chip" onclick="toggleChip(this)">💼 Business</button>
+      <button class="chip" onclick="toggleChip(this)">🍽️ Dining</button>
+      <button class="chip" onclick="toggleChip(this)">🏛️ Sightseeing</button>
+      <button class="chip" onclick="toggleChip(this)">🏋️ Gym</button>
+      <button class="chip" onclick="toggleChip(this)">🏊 Swimming</button>
+      <button class="chip" onclick="toggleChip(this)">🎿 Skiing</button>
+      <button class="chip" onclick="toggleChip(this)">🧘 Wellness</button>
+    </div>
+
+    <label class="form-label" style="margin-top:1rem">Suitcase dimensions (cm)</label>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input class="form-input-sm" type="number" id="s-l" placeholder="L" style="width:80px" oninput="calcVol()">
+      <span style="color:var(--text3)">×</span>
+      <input class="form-input-sm" type="number" id="s-w" placeholder="W" style="width:80px" oninput="calcVol()">
+      <span style="color:var(--text3)">×</span>
+      <input class="form-input-sm" type="number" id="s-h" placeholder="H" style="width:80px" oninput="calcVol()">
+      <span style="font-size:13px;color:var(--text3)" id="vol-out"></span>
     </div>
 
     <div class="modal-actions">
-      <button class="btn-secondary" onclick="App.closeModal('add-trip-modal')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="App.saveTrip()">Add Trip</button>
+      <button class="btn-outline" onclick="closeM('m-trip')">Cancel</button>
+      <button class="btn-accent" onclick="App.saveTrip()">Create Trip & Generate Packing Plan ✦</button>
     </div>
   </div>
 </div>
 
-<!-- ADD CLOTHING -->
-<div id="add-clothing-modal" class="modal-backdrop hidden">
-  <div class="modal" style="max-width:420px;">
-    <div class="modal-title">Add to Closet</div>
-    <div class="modal-subtitle">Add a clothing item to your wardrobe</div>
-
-    <div class="form-group">
-      <label class="form-label">Item Name</label>
-      <input class="form-input" id="cloth-name" placeholder="e.g. White linen shirt">
+<!-- Add Clothing -->
+<div id="m-cloth" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-head">
+      <div class="modal-title">Add to Closet</div>
+      <button class="modal-close" onclick="closeM('m-cloth')">×</button>
     </div>
-    <div class="form-row">
-      <div class="form-group">
+    <div class="modal-sub">Add a clothing item to your wardrobe</div>
+    <label class="form-label">Item name</label>
+    <input class="form-input" id="c-name" placeholder="e.g. White linen shirt" onkeydown="if(event.key==='Enter')App.saveCloth()">
+    <div class="form-row" style="margin-top:1rem">
+      <div>
         <label class="form-label">Category</label>
-        <select class="form-input-sm" id="cloth-type" style="width:100%;">
+        <select class="form-input-sm" id="c-type" style="width:100%">
           <option value="tops">Tops</option>
           <option value="bottoms">Bottoms</option>
           <option value="dresses">Dresses / Jumpsuits</option>
@@ -177,53 +347,412 @@
           <option value="sleepwear">Sleepwear</option>
         </select>
       </div>
-      <div class="form-group">
+      <div>
         <label class="form-label">Emoji</label>
-        <input class="form-input-sm" id="cloth-emoji" placeholder="👕" maxlength="4" style="font-size:1.3rem;text-align:center;">
+        <input class="form-input-sm" id="c-emo" placeholder="👕" maxlength="4" style="font-size:1.2rem;text-align:center">
       </div>
     </div>
-
     <div class="modal-actions">
-      <button class="btn-secondary" onclick="App.closeModal('add-clothing-modal')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="App.saveClothing()">Add Item</button>
+      <button class="btn-outline" onclick="closeM('m-cloth')">Cancel</button>
+      <button class="btn-accent" style="width:auto;padding:11px 26px" onclick="App.saveCloth()">Add Item</button>
     </div>
   </div>
 </div>
 
-<!-- IMPORT CLOTHING -->
-<div id="import-modal" class="modal-backdrop hidden">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-title">Import Clothing with AI</div>
-    <div class="modal-subtitle">Paste a shopping order confirmation, email, or clothing description — AI will extract the items</div>
-
-    <div class="form-group">
-      <label class="form-label">Paste text here</label>
-      <textarea class="form-input" id="import-text" style="height:160px;resize:vertical;" placeholder="e.g. Your ASOS order: 1x White cotton t-shirt, 1x Black skinny jeans, 1x Striped linen shirt, 1x Blue denim jacket..."></textarea>
+<!-- Import -->
+<div id="m-import" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <div class="modal-title">Import with AI</div>
+      <button class="modal-close" onclick="closeM('m-import')">×</button>
     </div>
-
+    <div class="modal-sub">Paste a shopping order confirmation, receipt, or any clothing description — AI will extract the items automatically.</div>
+    <textarea class="form-input" id="imp-txt" style="height:150px;resize:vertical" placeholder="e.g. Your ASOS order: 1x White cotton t-shirt, 1x Black skinny jeans, 1x Striped linen shirt..."></textarea>
     <div class="modal-actions">
-      <button class="btn-secondary" onclick="App.closeModal('import-modal')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:12px 28px;" id="import-btn" onclick="App.importFromText()">Import Items</button>
+      <button class="btn-outline" onclick="closeM('m-import')">Cancel</button>
+      <button class="btn-accent" style="width:auto;padding:11px 26px" id="imp-btn" onclick="App.importCloth()">Import Items ✦</button>
     </div>
   </div>
 </div>
 
-<!-- NOTIFICATION -->
-<div id="notification" class="notification"></div>
+<div class="toast" id="toast"></div>
 
-<script src="js/app.js"></script>
 <script>
-  // Volume calculator
-  function updateVol() {
-    const l = parseFloat(document.getElementById('suit-l')?.value) || 55;
-    const w = parseFloat(document.getElementById('suit-w')?.value) || 35;
-    const h = parseFloat(document.getElementById('suit-h')?.value) || 20;
-    const el = document.getElementById('vol-display');
-    if (el) el.textContent = (l*w*h/1000).toFixed(1) + 'L';
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function switchTab(t){
+  document.getElementById('tab-in').classList.toggle('active',t==='in');
+  document.getElementById('tab-up').classList.toggle('active',t==='up');
+  document.getElementById('form-in').style.display=t==='in'?'block':'none';
+  document.getElementById('form-up').style.display=t==='up'?'block':'none';
+  document.getElementById('auth-err').textContent='';
+}
+function toggleChip(el){el.classList.toggle('on')}
+function closeM(id){document.getElementById(id).classList.add('hidden')}
+function calcVol(){
+  const l=+document.getElementById('s-l').value||0;
+  const w=+document.getElementById('s-w').value||0;
+  const h=+document.getElementById('s-h').value||0;
+  const o=document.getElementById('vol-out');
+  o.textContent=l&&w&&h?`= ${(l*w*h/1000).toFixed(1)}L`:'';
+}
+function calcDays(){
+  const s=document.getElementById('t-start').value;
+  const e=document.getElementById('t-end').value;
+  const p=document.getElementById('days-preview');
+  if(s&&e){
+    const d=Math.round((new Date(e)-new Date(s))/(86400000));
+    p.textContent=d>0?`${d} night${d!==1?'s':''}`:d===0?'Same day trip':'⚠️ Return date before departure';
+  }else{p.textContent=''}
+}
+function greeting(){
+  const h=new Date().getHours();
+  if(h<12)return'Good morning';
+  if(h<17)return'Good afternoon';
+  return'Good evening';
+}
+
+// ══════════════════════════════════════════
+// APP
+// ══════════════════════════════════════════
+const App={
+  user:null,view:'home',tripId:null,
+
+  init(){
+    const s=localStorage.getItem('pw_sess');
+    if(s){this.user=JSON.parse(s);this.boot()}
+    else{document.getElementById('auth-page').classList.add('active');document.getElementById('app-page').classList.remove('active')}
+  },
+
+  boot(){
+    document.getElementById('auth-page').classList.remove('active');
+    document.getElementById('app-page').classList.add('active');
+    document.getElementById('nav-av').textContent=this.user.name[0].toUpperCase();
+    document.getElementById('nav-name').textContent=this.user.name;
+    this.go('home');
+  },
+
+  signUp(){
+    const email=document.getElementById('su-email').value.trim();
+    const name=document.getElementById('su-user').value.trim();
+    const pass=document.getElementById('su-pass').value;
+    const err=document.getElementById('auth-err');
+    if(!email||!name||!pass){err.textContent='Please fill all fields.';return}
+    if(pass.length<6){err.textContent='Password must be at least 6 characters.';return}
+    const users=JSON.parse(localStorage.getItem('pw_users')||'[]');
+    if(users.find(u=>u.email===email)){err.textContent='Email already registered.';return}
+    const u={id:'u'+Date.now(),email,name,pass};
+    users.push(u);
+    localStorage.setItem('pw_users',JSON.stringify(users));
+    localStorage.setItem(`pw_data_${u.id}`,JSON.stringify({trips:[],closet:[],laundry:[]}));
+    this.user={id:u.id,email,name};
+    localStorage.setItem('pw_sess',JSON.stringify(this.user));
+    this.boot();
+  },
+
+  signIn(){
+    const email=document.getElementById('si-email').value.trim();
+    const pass=document.getElementById('si-pass').value;
+    const err=document.getElementById('auth-err');
+    const users=JSON.parse(localStorage.getItem('pw_users')||'[]');
+    const u=users.find(u=>u.email===email&&u.pass===pass);
+    if(!u){err.textContent='Incorrect email or password.';return}
+    this.user={id:u.id,email:u.email,name:u.name};
+    localStorage.setItem('pw_sess',JSON.stringify(this.user));
+    this.boot();
+  },
+
+  out(){localStorage.removeItem('pw_sess');location.reload()},
+
+  data(){return JSON.parse(localStorage.getItem(`pw_data_${this.user.id}`)||'{"trips":[],"closet":[],"laundry":[]}')},
+  save(d){localStorage.setItem(`pw_data_${this.user.id}`,JSON.stringify(d))},
+
+  go(v,tid){
+    this.view=v;
+    if(tid)this.tripId=tid;
+    document.querySelectorAll('.nav-btn[data-v]').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+    const renders={home:()=>this.rHome(),closet:()=>this.rCloset(),laundry:()=>this.rLaundry(),packing:()=>this.rPacking()};
+    if(renders[v])renders[v]();
+  },
+
+  toast(msg,type=''){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.className='toast show '+(type||'');
+    setTimeout(()=>t.classList.remove('show'),3500);
+  },
+
+  apiKey(){return localStorage.getItem('pw_api')||''},
+
+  // ── HOME ──
+  rHome(){
+    const d=this.data();
+    const ak=this.apiKey();
+    const banner=ak?'':
+      `<div class="api-banner">🔑 Add your Anthropic API key to enable AI features:
+        <input type="password" id="ak-in" placeholder="sk-ant-...">
+        <button onclick="App.saveKey()">Save Key</button>
+      </div>`;
+    const stats=`<div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${d.closet.length}</div><div class="stat-label">Closet items</div></div>
+      <div class="stat-card"><div class="stat-num accent">${d.laundry.length}</div><div class="stat-label">Dirty items</div></div>
+      <div class="stat-card"><div class="stat-num">${d.trips.length}</div><div class="stat-label">Upcoming trips</div></div>
+      <div class="stat-card"><div class="stat-num">${d.trips.filter(t=>t.packingList&&t.packingList.length>0).length}</div><div class="stat-label">Lists generated</div></div>
+    </div>`;
+    const next=d.trips.length===0
+      ?`<div class="next-card"><div class="next-label">Next Trip</div><div class="empty-next"><div class="emo">✈️</div><strong>No trips planned yet</strong><div>Create a trip and PackWise will build your outfit plan automatically.</div></div></div>`
+      :`<div class="section-head"><div class="section-title">Your Trips</div><button class="btn-outline" onclick="document.getElementById('m-trip').classList.remove('hidden')">+ New Trip</button></div>
+      <div class="trips-grid">
+        ${d.trips.map(t=>`<div class="trip-card" onclick="App.go('packing','${t.id}')">
+          <div class="trip-dest">${t.destination}</div>
+          <div class="trip-meta">${t.startDate||'Date TBD'} · ${t.duration||'?'} nights</div>
+          <div class="tags">${(t.activities||[]).slice(0,3).map(a=>`<span class="tag">${a}</span>`).join('')}</div>
+        </div>`).join('')}
+        <div class="add-trip-tile" onclick="document.getElementById('m-trip').classList.remove('hidden')"><div class="plus">+</div><div>Add new trip</div></div>
+      </div>`;
+
+    document.getElementById('main').innerHTML=`
+      ${banner}
+      <div class="greeting-row">
+        <div><div class="greeting">${greeting()}, <span>${this.user.name}</span> ☀️</div>
+        <div class="greeting-sub">${d.trips.length===0?'Add your first trip to get started.':d.trips.length===1?'You have 1 trip planned.':`You have ${d.trips.length} trips planned.`}</div></div>
+        <button class="btn-accent" onclick="document.getElementById('m-trip').classList.remove('hidden')" style="white-space:nowrap;flex-shrink:0;margin-top:4px">+ New Trip</button>
+      </div>
+      ${stats}${next}`;
+  },
+
+  saveKey(){
+    const v=document.getElementById('ak-in').value.trim();
+    if(v){localStorage.setItem('pw_api',v);this.toast('API key saved!');this.rHome()}
+  },
+
+  // ── SAVE TRIP ──
+  saveTrip(){
+    const dest=document.getElementById('t-dest').value.trim();
+    const start=document.getElementById('t-start').value;
+    const end=document.getElementById('t-end').value;
+    const l=+document.getElementById('s-l').value||55;
+    const w=+document.getElementById('s-w').value||35;
+    const h=+document.getElementById('s-h').value||20;
+    const acts=[...document.querySelectorAll('#act-chips .chip.on')].map(c=>c.textContent.trim());
+    if(!dest){this.toast('Please enter a destination.');return}
+    const dur=start&&end?Math.max(1,Math.round((new Date(end)-new Date(start))/86400000)):7;
+    const d=this.data();
+    const trip={id:'t'+Date.now(),destination:dest,startDate:start||'TBD',endDate:end||'',duration:dur,activities:acts,suitcase:{l,w,h},packingList:[],weather:null};
+    d.trips.push(trip);this.save(d);
+    closeM('m-trip');
+    // reset chips
+    document.querySelectorAll('#act-chips .chip.on').forEach(c=>c.classList.remove('on'));
+    document.getElementById('t-dest').value='';
+    this.toast(`Trip to ${dest} added!`);
+    this.go('packing',trip.id);
+    if(d.closet.length>0)this.genList(trip.id);
+  },
+
+  // ── CLOSET ──
+  rCloset(){
+    const d=this.data();
+    const cards=d.closet.map(c=>`
+      <div class="cloth-card ${d.laundry.includes(c.id)?'dirty':''}" onclick="App.clothMenu('${c.id}')">
+        <div class="cloth-emo">${c.emoji}</div>
+        <div class="cloth-name">${c.name}</div>
+        <div class="cloth-type">${c.type}</div>
+      </div>`).join('');
+    document.getElementById('main').innerHTML=`
+      <div class="greeting"><span>My Closet</span></div>
+      <div class="greeting-sub" style="margin-bottom:1.5rem">${d.closet.length} items · click any item to move to/from laundry</div>
+      <div class="import-hint">💡 Paste a shopping order and AI will extract your clothes automatically.
+        <button class="btn-outline" onclick="document.getElementById('m-import').classList.remove('hidden')">Import with AI ✦</button>
+      </div>
+      <div class="section-head">
+        <div class="section-title">All Items</div>
+        <button class="btn-outline" onclick="document.getElementById('m-cloth').classList.remove('hidden')">+ Add Item</button>
+      </div>
+      <div class="closet-grid">
+        ${cards}
+        <div class="add-cloth-tile" onclick="document.getElementById('m-cloth').classList.remove('hidden')"><div style="font-size:1.5rem">+</div><div>Add item</div></div>
+      </div>`;
+  },
+
+  saveCloth(){
+    const name=document.getElementById('c-name').value.trim();
+    const type=document.getElementById('c-type').value;
+    const emoji=document.getElementById('c-emo').value.trim()||'👕';
+    if(!name){this.toast('Please enter a name.');return}
+    const d=this.data();
+    d.closet.push({id:'c'+Date.now(),name,type,emoji});
+    this.save(d);closeM('m-cloth');
+    document.getElementById('c-name').value='';
+    document.getElementById('c-emo').value='';
+    this.toast(`${emoji} ${name} added!`);
+    if(this.view==='closet')this.rCloset();
+  },
+
+  clothMenu(id){
+    const d=this.data();
+    const item=d.closet.find(c=>c.id===id);
+    const dirty=d.laundry.includes(id);
+    const options=[dirty?'✓ Mark as clean':'🧺 Move to laundry','🗑️ Delete item','Cancel'];
+    const choice=window.confirm(`${item.emoji} ${item.name}\n\nOptions:\n1 = ${options[0]}\n2 = Delete\n\nType 1 or 2, then OK`);
+    // simple: toggle laundry on single click
+    if(choice){
+      if(dirty){d.laundry=d.laundry.filter(x=>x!==id);this.toast(`${item.emoji} Marked as clean`)}
+      else{d.laundry=[...d.laundry,id];this.toast(`${item.emoji} Moved to laundry basket`)}
+      this.save(d);
+      if(this.view==='closet')this.rCloset();
+      if(this.view==='laundry')this.rLaundry();
+    }
+  },
+
+  async importCloth(){
+    const txt=document.getElementById('imp-txt').value.trim();
+    const ak=this.apiKey();
+    if(!txt){this.toast('Please paste some text.');return}
+    if(!ak){this.toast('API key required.');return}
+    const btn=document.getElementById('imp-btn');
+    btn.textContent='Processing…';btn.disabled=true;
+    const prompt=`Extract all clothing items from this text. Return ONLY a JSON array, no markdown:\n[{"name":"White t-shirt","type":"tops","emoji":"👕"},...]\nTypes: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear\nText:\n${txt}`;
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})});
+      const json=await res.json();
+      const items=JSON.parse(json.content[0].text.replace(/```json|```/g,'').trim());
+      const d=this.data();
+      items.forEach(it=>d.closet.push({id:'c'+Date.now()+Math.random(),name:it.name,type:it.type,emoji:it.emoji||'👕'}));
+      this.save(d);closeM('m-import');
+      document.getElementById('imp-txt').value='';
+      this.toast(`Added ${items.length} items to your closet!`);
+      if(this.view==='closet')this.rCloset();
+    }catch(e){this.toast('Import failed — check your API key.')}
+    btn.textContent='Import Items ✦';btn.disabled=false;
+  },
+
+  // ── LAUNDRY ──
+  rLaundry(){
+    const d=this.data();
+    const items=d.closet.filter(c=>d.laundry.includes(c.id));
+    const chips=items.length===0
+      ?`<div class="laundry-empty"><div class="emo">🧺</div><p>Your laundry basket is empty.<br>Items you mark as dirty will appear here.</p></div>`
+      :`<div class="laundry-chips">${items.map(c=>`<div class="laundry-chip"><span>${c.emoji}</span><span>${c.name}</span><button class="laundry-x" onclick="App.cleanItem('${c.id}')" title="Mark clean">✓</button></div>`).join('')}</div>`;
+    document.getElementById('main').innerHTML=`
+      <div class="greeting-row">
+        <div><div class="greeting"><span>Laundry Basket</span></div>
+        <div class="greeting-sub">${items.length} item${items.length!==1?'s':''} to wash · these won't appear in packing suggestions</div></div>
+        ${items.length>0?`<button class="btn-outline" onclick="App.allClean()">✓ All clean</button>`:''}
+      </div>
+      <div class="laundry-box">${chips}</div>
+      <div class="tip-box">💡 <strong>Tip:</strong> Go to <em>My Closet</em> and click any item to toggle it between clean and dirty. The AI will warn you if a dirty item is needed for an upcoming trip.</div>`;
+  },
+
+  cleanItem(id){
+    const d=this.data();
+    d.laundry=d.laundry.filter(x=>x!==id);
+    this.save(d);this.rLaundry();
+  },
+
+  allClean(){
+    const d=this.data();d.laundry=[];this.save(d);
+    this.toast('All items marked as clean!');this.rLaundry();
+  },
+
+  // ── PACKING ──
+  rPacking(){
+    const d=this.data();
+    const trip=d.trips.find(t=>t.id===this.tripId);
+    const main=document.getElementById('main');
+    if(!trip){main.innerHTML='<div class="greeting-sub" style="padding:2rem">Select a trip from the Home tab.</div>';return}
+
+    const vol=trip.suitcase.l*trip.suitcase.w*trip.suitcase.h;
+    const usedVol=(trip.packingList||[]).reduce((a,day)=>a+day.outfits.length*1500,0);
+    const pct=Math.min(100,Math.round(usedVol/vol*100));
+    const barCls=pct>90?'over':pct>70?'warn':'';
+
+    const weatherHtml=trip.weather
+      ?`<div class="weather-big"><div class="weather-loc">${trip.destination}</div><div class="weather-temp">${trip.weather.emoji||''} ${trip.weather.temp||''}</div><div class="weather-desc">${trip.weather.description||''}</div></div>`
+      :`<div class="weather-big"><div class="weather-loc">${trip.destination}</div><div class="weather-temp">—</div><div class="weather-desc">Generate list to fetch weather</div></div>`;
+
+    const suiteHtml=`<div class="side-widget">
+      <div class="widget-title">🧳 Suitcase Capacity</div>
+      <div class="cap-text">${trip.suitcase.l}×${trip.suitcase.w}×${trip.suitcase.h} cm</div>
+      <div class="cap-bar"><div class="cap-fill ${barCls}" style="width:${pct}%"></div></div>
+      <div class="cap-text"><strong>${pct}%</strong> full · ${Math.round(usedVol/1000)}L of ${Math.round(vol/1000)}L used</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px">${pct>90?'⚠️ Very full — consider removing items':pct>70?'🟡 Getting full':pct>0?'✅ Plenty of space left':'Add outfits to see fill level'}</div>
+    </div>`;
+
+    let listHtml='';
+    if(!trip.packingList||trip.packingList.length===0){
+      listHtml=`<div class="gen-btn-wrap"><div class="gen-empty-icon">✨</div><div class="gen-empty-title">Ready to pack?</div><div class="gen-empty-sub">AI will create a day-by-day outfit plan using your closet, accounting for weather and your activities.</div><button class="btn-accent" onclick="App.genList('${trip.id}')">Generate Packing List ✦</button></div>`;
+    }else{
+      const laundry=d.laundry||[];
+      listHtml=`<div class="section-head"><div class="section-title">Day-by-Day Outfits</div><button class="btn-outline" onclick="App.genList('${trip.id}')">↻ Regenerate</button></div>`
+        +trip.packingList.map((day,di)=>`
+        <div class="day-card">
+          <div class="day-head">Day ${day.day}${day.weather?`<span class="day-weather">${day.weather}</span>`:''}</div>
+          ${day.outfits.map((o,oi)=>`<div class="outfit-row">
+            <span class="outfit-emo">${o.emoji||'👕'}</span>
+            <span class="outfit-name">${o.name}</span>
+            ${laundry.some(id=>id===o.id)?'<span class="outfit-dirty">in laundry</span>':''}
+            <button class="edit-btn" onclick="App.editOutfit('${trip.id}',${di},${oi})">✏️</button>
+          </div>`).join('')}
+        </div>`).join('');
+    }
+
+    main.innerHTML=`
+      <div class="greeting-row">
+        <div><div class="greeting"><span>${trip.destination}</span></div>
+        <div class="greeting-sub">${trip.duration} nights · ${trip.startDate||'Date TBD'}${trip.activities&&trip.activities.length>0?' · '+trip.activities.join(', '):''}</div></div>
+        <button class="btn-outline" onclick="App.go('home')">← Back</button>
+      </div>
+      <div class="packing-layout">
+        <div id="list-area">${listHtml}</div>
+        <div>${weatherHtml}${suiteHtml}</div>
+      </div>`;
+  },
+
+  async genList(tripId){
+    const d=this.data();
+    const trip=d.trips.find(t=>t.id===tripId);
+    const ak=this.apiKey();
+    if(!ak){this.toast('Please add your Anthropic API key first.');return}
+    const area=document.getElementById('list-area');
+    if(area)area.innerHTML='<div class="ai-load"><div class="spin"></div>AI is building your packing list…</div>';
+    const avail=d.closet.filter(c=>!d.laundry.includes(c.id));
+    const dirty=d.closet.filter(c=>d.laundry.includes(c.id));
+    const prompt=`You are a smart packing assistant. Create a day-by-day outfit packing list.
+Trip: ${trip.destination} for ${trip.duration} nights, departing ${trip.startDate||'soon'}
+Activities: ${trip.activities&&trip.activities.length>0?trip.activities.join(', '):'general travel'}
+Suitcase: ${trip.suitcase.l}×${trip.suitcase.w}×${trip.suitcase.h}cm (${Math.round(trip.suitcase.l*trip.suitcase.w*trip.suitcase.h/1000)}L)
+Available clothes: ${avail.length>0?avail.map(c=>`${c.id}:${c.emoji}${c.name}(${c.type})`).join(', '):'closet is empty — suggest generic items'}
+${dirty.length>0?`Do NOT suggest these dirty items: ${dirty.map(c=>c.name).join(', ')}`:' '}
+Also include approximate weather for ${trip.destination} in this season.
+Respond ONLY with valid JSON, no markdown fences:
+{"weather":{"temp":"22°C","description":"Warm and sunny","emoji":"☀️"},"days":[{"day":1,"weather":"Sunny 22°C","outfits":[{"id":"closet-id-or-generic","emoji":"👕","name":"White shirt + jeans","occasion":"casual"}]}]}
+Create exactly ${trip.duration} day entries. Re-use and mix items across days. Be practical and stylish.`;
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2500,messages:[{role:'user',content:prompt}]})});
+      const json=await res.json();
+      const result=JSON.parse(json.content[0].text.replace(/```json|```/g,'').trim());
+      trip.packingList=result.days;
+      trip.weather=result.weather;
+      this.save(d);
+      // Check dirty warnings
+      const dirtyNeeded=dirty.filter(c=>result.days.some(day=>day.outfits.some(o=>o.name.toLowerCase().includes(c.name.toLowerCase()))));
+      this.go('packing',tripId);
+      if(dirtyNeeded.length>0)setTimeout(()=>this.toast(`🧺 You may need to wash: ${dirtyNeeded.map(c=>c.name).join(', ')}`,`warn`),600);
+    }catch(e){
+      if(area)area.innerHTML=`<div style="color:var(--pink-dark);padding:1.5rem">Failed to generate. Check your API key and try again.<br><small style="color:var(--text3)">${e.message}</small></div>`;
+    }
+  },
+
+  editOutfit(tripId,di,oi){
+    const d=this.data();
+    const trip=d.trips.find(t=>t.id===tripId);
+    const o=trip.packingList[di].outfits[oi];
+    const n=prompt('Edit outfit:',o.name);
+    if(n&&n.trim()){o.name=n.trim();this.save(d);this.rPacking()}
   }
-  document.addEventListener('input', e => {
-    if (['suit-l','suit-w','suit-h'].includes(e.target.id)) updateVol();
-  });
+};
+
+App.init();
 </script>
 </body>
 </html>
