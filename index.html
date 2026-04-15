@@ -408,30 +408,42 @@ function calcDays(){
 }
 function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening'}
 
-// AI via OpenRouter — free tier available, no credit card needed
-// Sign up at openrouter.ai, go to Keys, create a free key
+// AI via OpenRouter — tries multiple free models in order until one works
 async function callAI(prompt, maxTokens=2500){
   const ak = localStorage.getItem('pw_api') || '';
   if(!ak) throw new Error('NO_KEY');
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + ak,
-      'HTTP-Referer': location.origin,
-      'X-Title': 'PackWise'
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-3.3-70b-instruct:free',
-      max_tokens: maxTokens,
-      messages: [{role:'user', content: prompt}]
-    })
-  });
-  if(res.status === 401 || res.status === 403) throw new Error('INVALID_KEY');
-  if(!res.ok){ let m = 'HTTP '+res.status; try{const j=await res.json();m=j.error?.message||m;}catch(e){} throw new Error(m); }
-  const json = await res.json();
-  if(json.error) throw new Error(json.error.message || 'API error');
-  return json.choices[0].message.content;
+  // Free models to try in order — if one fails, moves to next
+  const models = [
+    'meta-llama/llama-3.1-8b-instruct:free',
+    'mistralai/mistral-7b-instruct:free',
+    'google/gemma-2-9b-it:free',
+    'meta-llama/llama-3.3-70b-instruct:free'
+  ];
+  let lastErr = '';
+  for(const model of models){
+    try{
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + ak,
+          'HTTP-Referer': location.origin,
+          'X-Title': 'PackWise'
+        },
+        body: JSON.stringify({model, max_tokens: maxTokens, messages:[{role:'user',content:prompt}]})
+      });
+      if(res.status===401||res.status===403) throw new Error('INVALID_KEY');
+      const json = await res.json();
+      if(json.error){ lastErr=json.error.message||'Provider error'; continue; }
+      const text = json.choices?.[0]?.message?.content;
+      if(!text){ lastErr='Empty response'; continue; }
+      return text;
+    }catch(e){
+      if(e.message==='INVALID_KEY') throw e;
+      lastErr = e.message;
+    }
+  }
+  throw new Error('All models failed. Last error: '+lastErr);
 }
 function aiErrMsg(e){
   if(e.message==='NO_KEY') return `<b>Add your free OpenRouter key in ⚙️ Settings</b> to enable AI.<br><small>Sign up at <a href="https://openrouter.ai" target="_blank" style="color:var(--pink-dark)">openrouter.ai</a> → Keys → Create Key. No credit card needed.</small>`;
