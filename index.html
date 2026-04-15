@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PackWise — Travel Smart</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧳</text></svg>">
+</head>
+<body>
+
+<!-- ═══════════════ AUTH PAGE ═══════════════ -->
+<div id="auth-page" class="page active">
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">PackWise</div>
+      <div class="auth-tagline">Pack smart. Travel light.</div>
+
+      <div class="tab-row">
+        <button class="tab-btn active" id="auth-tab-signin">Sign In</button>
+        <button class="tab-btn" id="auth-tab-signup">Create Account</button>
+      </div>
+
+      <!-- SIGN IN -->
+      <div id="signin-form">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" id="si-pass" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" onclick="App.signIn()">Sign In</button>
+      </div>
+
+      <!-- SIGN UP -->
+      <div id="signup-form" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" type="text" id="su-username" placeholder="e.g. Sophie" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" id="su-pass" placeholder="At least 6 characters" autocomplete="new-password">
+        </div>
+        <button class="btn-primary" onclick="App.signUp()">Create Account</button>
+      </div>
+
+      <div class="error-msg" id="auth-error"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP PAGE ═══════════════ -->
+<div id="app-page" class="page">
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">PackWise</div>
+
+      <button class="nav-item" data-view="home" onclick="App.navigate('home')">
+        <span class="nav-icon">🏠</span> Home
+      </button>
+      <button class="nav-item" data-view="closet" onclick="App.navigate('closet')">
+        <span class="nav-icon">👗</span> My Closet
+      </button>
+      <button class="nav-item" data-view="laundry" onclick="App.navigate('laundry')">
+        <span class="nav-icon">🧺</span> Laundry Basket
+      </button>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user">
+          <div class="user-avatar" id="nav-avatar">?</div>
+          <span id="nav-username">User</span>
+        </div>
+        <button class="nav-item" onclick="App.signOut()" style="color:var(--taupe);">
+          <span class="nav-icon">↩</span> Sign Out
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main-content" id="main-content">
+      <!-- Rendered by JS -->
+    </main>
+
+  </div>
+</div>
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- ADD TRIP -->
+<div id="add-trip-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="modal-title">Plan a New Trip</div>
+    <div class="modal-subtitle">Tell us about your adventure</div>
+
+    <div class="form-group">
+      <label class="form-label">Destination</label>
+      <input class="form-input" id="trip-dest" placeholder="e.g. Barcelona, Spain">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Duration (days)</label>
+        <input class="form-input-sm" type="number" id="trip-duration" placeholder="7" min="1" max="60">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Start Date</label>
+        <input class="form-input-sm" type="date" id="trip-start">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Activities</label>
+      <div class="checkbox-group">
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🏖️ Beach</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🏔️ Hiking</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🍽️ Fine dining</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🎭 Nightlife</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🏛️ Sightseeing</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">💼 Business</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🧘 Wellness</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🎿 Skiing</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🚴 Cycling</button>
+        <button class="activity-chip" onclick="App.toggleActivity(this)">🛕 Culture</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Suitcase Size (cm) — Length × Width × Height</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="form-input-sm" type="number" id="suit-l" placeholder="55" style="width:70px;">
+        <span style="color:var(--taupe);">×</span>
+        <input class="form-input-sm" type="number" id="suit-w" placeholder="35" style="width:70px;">
+        <span style="color:var(--taupe);">×</span>
+        <input class="form-input-sm" type="number" id="suit-h" placeholder="20" style="width:70px;">
+        <span style="font-size:12px;color:var(--taupe);">= <span id="vol-display">38.5L</span></span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="App.closeModal('add-trip-modal')">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="App.saveTrip()">Add Trip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLOTHING -->
+<div id="add-clothing-modal" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">Add to Closet</div>
+    <div class="modal-subtitle">Add a clothing item to your wardrobe</div>
+
+    <div class="form-group">
+      <label class="form-label">Item Name</label>
+      <input class="form-input" id="cloth-name" placeholder="e.g. White linen shirt">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-input-sm" id="cloth-type" style="width:100%;">
+          <option value="tops">Tops</option>
+          <option value="bottoms">Bottoms</option>
+          <option value="dresses">Dresses / Jumpsuits</option>
+          <option value="outerwear">Outerwear</option>
+          <option value="shoes">Shoes</option>
+          <option value="accessories">Accessories</option>
+          <option value="swimwear">Swimwear</option>
+          <option value="activewear">Activewear</option>
+          <option value="underwear">Underwear / Socks</option>
+          <option value="sleepwear">Sleepwear</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Emoji</label>
+        <input class="form-input-sm" id="cloth-emoji" placeholder="👕" maxlength="4" style="font-size:1.3rem;text-align:center;">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="App.closeModal('add-clothing-modal')">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="App.saveClothing()">Add Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT CLOTHING -->
+<div id="import-modal" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">Import Clothing with AI</div>
+    <div class="modal-subtitle">Paste a shopping order confirmation, email, or clothing description — AI will extract the items</div>
+
+    <div class="form-group">
+      <label class="form-label">Paste text here</label>
+      <textarea class="form-input" id="import-text" style="height:160px;resize:vertical;" placeholder="e.g. Your ASOS order: 1x White cotton t-shirt, 1x Black skinny jeans, 1x Striped linen shirt, 1x Blue denim jacket..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="App.closeModal('import-modal')">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:12px 28px;" id="import-btn" onclick="App.importFromText()">Import Items</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notification" class="notification"></div>
+
+<script src="js/app.js"></script>
+<script>
+  // Volume calculator
+  function updateVol() {
+    const l = parseFloat(document.getElementById('suit-l')?.value) || 55;
+    const w = parseFloat(document.getElementById('suit-w')?.value) || 35;
+    const h = parseFloat(document.getElementById('suit-h')?.value) || 20;
+    const el = document.getElementById('vol-display');
+    if (el) el.textContent = (l*w*h/1000).toFixed(1) + 'L';
+  }
+  document.addEventListener('input', e => {
+    if (['suit-l','suit-w','suit-h'].includes(e.target.id)) updateVol();
+  });
+</script>
+</body>
+</html>
