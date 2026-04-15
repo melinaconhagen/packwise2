@@ -248,7 +248,7 @@ const App = {
         <div class="day-block">
           <div class="day-title">
             Day ${day.day}
-            ${day.weather ? `<span style="font-size:13px;color:var(--taupe);font-family:'DM Sans',sans-serif;font-weight:400;">${day.weather}</span>` : ''}
+            ${day.weather ? `<span style="font-size:13px;color:var(--taupe);font-weight:400;">${day.weather}</span>` : ''}
           </div>
           ${day.outfits.map((outfit, oi) => `
             <div class="outfit-row">
