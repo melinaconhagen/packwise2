@@ -169,6 +169,27 @@ select.finput{cursor:pointer}
 .wx-search input:focus{border-color:var(--pink)}
 .photo-upload{border:2px dashed var(--border2);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:.2s;color:var(--text3)}
 .photo-upload:hover{border-color:var(--pink);background:var(--pink-pale);color:var(--pink-dark)}
+
+/* OUTFIT GROUPS */
+.og-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:1rem}
+.og-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;transition:.2s;position:relative}
+.og-card:hover{border-color:var(--border2);box-shadow:0 2px 12px rgba(180,100,120,.08)}
+.og-name{font-size:1rem;font-weight:700;margin-bottom:4px}
+.og-meta{font-size:12px;color:var(--text3);margin-bottom:10px}
+.og-items{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.og-item{background:var(--pink-pale);border-radius:20px;padding:2px 9px;font-size:11px;color:var(--pink-dark)}
+.og-actions{display:flex;gap:6px;flex-wrap:wrap}
+/* WX inline edit */
+.wx-edit-row{display:flex;gap:6px;align-items:center;margin-top:8px}
+.wx-edit-row input{flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.15);color:#fff;outline:none}
+.wx-edit-row input::placeholder{color:rgba(255,255,255,.5)}
+.wx-edit-row input:focus{border-color:rgba(255,255,255,.5)}
+.wx-edit-row button{padding:7px 12px;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.wx-edit-row button:hover{background:rgba(255,255,255,.3)}
+/* TRIP EDIT badge */
+.trip-edit-btn{font-size:12px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:.15s}
+.trip-edit-btn:hover{border-color:var(--pink);color:var(--pink-dark);background:var(--pink-pale)}
+
 @media(max-width:860px){.sidebar{display:none}.main{padding:1.5rem}.pack-layout{grid-template-columns:1fr}}
 @media(max-width:500px){.gtitle{font-size:1.5rem}.frow{grid-template-columns:1fr}}
 </style>
@@ -205,6 +226,7 @@ select.finput{cursor:pointer}
   <div class="sidebar-brand">Pack<span>Wise</span></div>
   <button class="nav-btn active" data-v="home" onclick="App.go('home')"><span class="ico">🏠</span>Home</button>
   <button class="nav-btn" data-v="closet" onclick="App.go('closet')"><span class="ico">👗</span>My Closet</button>
+  <button class="nav-btn" data-v="outfits" onclick="App.go('outfits')"><span class="ico">👚</span>Saved Outfits</button>
   <button class="nav-btn" data-v="luggage" onclick="App.go('luggage')"><span class="ico">🧳</span>My Luggage</button>
   <button class="nav-btn" data-v="laundry" onclick="App.go('laundry')"><span class="ico">🧺</span>Laundry</button>
   <button class="nav-btn" data-v="settings" onclick="App.go('settings')"><span class="ico">⚙️</span>Settings</button>
@@ -377,6 +399,57 @@ select.finput{cursor:pointer}
  </div>
 </div>
 
+
+<!-- MODAL: Save Outfit Group -->
+<div id="m-og" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">Save Outfit Group</div><button class="mclose" onclick="closeM('m-og')">×</button></div>
+  <div class="msub">Give this outfit a name and group it for easy reuse across trips</div>
+  <label class="flabel">Outfit name</label>
+  <input class="finput" id="og-name" placeholder="e.g. Beach Day, Business Casual, Date Night">
+  <label class="flabel">Group / Category</label>
+  <input class="finput" id="og-group" placeholder="e.g. Casual, Formal, Activewear, Vacation" list="og-group-list">
+  <datalist id="og-group-list"><option value="Casual"><option value="Formal"><option value="Activewear"><option value="Vacation"><option value="Beach"><option value="Business"><option value="Evening"></datalist>
+  <label class="flabel">Items in this outfit</label>
+  <div id="og-item-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;margin-bottom:8px"></div>
+  <input class="finput" id="og-item-input" placeholder="Type item name and press Enter (e.g. White linen shirt)" onkeydown="if(event.key==='Enter'){event.preventDefault();App.ogAddItem()}">
+  <button class="btn-o btn-sm" style="margin-top:6px" onclick="App.ogAddItem()">+ Add item</button>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-og')">Cancel</button><button class="btn-a" onclick="App.saveOG()">Save Outfit</button></div>
+ </div>
+</div>
+
+<!-- MODAL: Edit Trip -->
+<div id="m-edittrip" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">Edit Trip</div><button class="mclose" onclick="closeM('m-edittrip')">×</button></div>
+  <div class="msub">Update your trip details, dates, or add more days</div>
+  <label class="flabel">Trip name / destination</label>
+  <input class="finput" id="et-dest" placeholder="e.g. Paris, France">
+  <div class="frow" style="margin-top:1rem">
+   <div><label class="flabel">Departure date</label><input class="finput" type="date" id="et-start" onchange="calcETDays()"></div>
+   <div><label class="flabel">Return date</label><input class="finput" type="date" id="et-end" onchange="calcETDays()"></div>
+  </div>
+  <div id="et-days-preview" style="font-size:12px;color:var(--text3);margin-top:5px"></div>
+  <label class="flabel" style="margin-top:1rem">Or set number of nights directly</label>
+  <input class="finput" type="number" id="et-nights" placeholder="e.g. 7" min="1" max="90">
+  <label class="flabel" style="margin-top:1rem">Activities</label>
+  <div class="chips" id="et-act-chips">
+   <button class="chip" onclick="this.classList.toggle('on')">🏖️ Beach</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏔️ Hiking</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🎭 Nightlife</button>
+   <button class="chip" onclick="this.classList.toggle('on')">💼 Business</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🍽️ Dining</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏛️ Sightseeing</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏋️ Gym</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏊 Swimming</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🎿 Skiing</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🧘 Wellness</button>
+  </div>
+  <div id="et-warn" style="font-size:12px;color:var(--gold);margin-top:10px;display:none"></div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-edittrip')">Cancel</button><button class="btn-a" onclick="App.saveEditTrip()">Save Changes</button></div>
+ </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -408,6 +481,16 @@ function calcDays(){
   if(s&&e){const d=Math.round((new Date(e)-new Date(s))/86400000);p.textContent=d>0?`${d} night${d!==1?'s':''}`:d===0?'Same-day':'⚠️ Return before departure';}
   else p.textContent='';
 }
+
+function calcETDays(){
+  const s=document.getElementById('et-start').value,e=document.getElementById('et-end').value;
+  const p=document.getElementById('et-days-preview');
+  if(s&&e){const d=Math.round((new Date(e)-new Date(s))/86400000);
+    p.textContent=d>0?d+' night'+(d!==1?'s':''):'Same-day or invalid';
+    document.getElementById('et-nights').value=d>0?d:'';
+  }else p.textContent='';
+}
+
 function greet(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening'}
 function toB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);})}
 function volL(l,w,h){return+(l*w*h*0.016387).toFixed(1)}
@@ -499,7 +582,7 @@ const App={
   go(v,tid){
     this.view=v;if(tid)this.tripId=tid;
     document.querySelectorAll('.nav-btn[data-v]').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
-    ({home:()=>this.rHome(),closet:()=>this.rCloset(),luggage:()=>this.rLuggage(),laundry:()=>this.rLaundry(),packing:()=>this.rPacking(),settings:()=>this.rSettings()})[v]?.();
+    ({home:()=>this.rHome(),closet:()=>this.rCloset(),outfits:()=>this.rOutfits(),luggage:()=>this.rLuggage(),laundry:()=>this.rLaundry(),packing:()=>this.rPacking(),settings:()=>this.rSettings()})[v]?.();
   },
   toast(msg,type=''){
     const t=document.getElementById('toast');t.innerHTML=msg;t.className='toast show '+(type||'');
@@ -830,16 +913,16 @@ Be specific with colors and styles. Only include clearly visible items.`,
       </div>`;
     }).join('');
 
-    const wxCard=trip.weather
-      ?`<div class="wx-card"><div class="wx-loc">${trip.destination}</div><div class="wx-temp">${trip.weather.emoji||''} ${trip.weather.temp||''}</div><div class="wx-desc">${trip.weather.description||''}</div></div>`
-      :`<div class="wx-card">
-          <div class="wx-loc">Weather for ${trip.destination}</div>
-          <div class="wx-search">
-            <input id="wx-input" placeholder="City or zip code…" onkeydown="if(event.key==='Enter')App.fetchWeather('${trip.id}')">
-            <button class="btn-a btn-sm" onclick="App.fetchWeather('${trip.id}')">Search</button>
-          </div>
-          <div class="wx-temp" style="font-size:1rem;opacity:.7">Enter location above</div>
-        </div>`;
+    const wxLoc=trip.weatherLocation||trip.destination||'';
+    const wxCard=`<div class="wx-card">
+      <div class="wx-loc">${trip.weather?trip.weather.emoji+' '+trip.weather.temp:'Weather'}</div>
+      <div class="wx-temp" style="font-size:${trip.weather?'1.5rem':'1rem'};${trip.weather?'':'opacity:.6'}">${trip.weather?trip.weather.description:'No weather loaded yet'}</div>
+      ${trip.weather?`<div class="wx-desc" style="margin-top:2px;opacity:.6">${trip.weatherLocation||trip.destination}</div>`:''}
+      <div class="wx-edit-row">
+        <input id="wx-input" placeholder="Update: city or zip…" value="${wxLoc}" onkeydown="if(event.key==='Enter')App.fetchWeather('${trip.id}')">
+        <button onclick="App.fetchWeather('${trip.id}')">Update ↻</button>
+      </div>
+    </div>`;
 
     const sidebar=`
       ${wxCard}
@@ -883,7 +966,10 @@ Be specific with colors and styles. Only include clearly visible items.`,
       <div class="grow">
         <div><div class="gtitle"><span>${trip.destination}</span></div>
         <div class="gsub">${trip.duration} nights · ${trip.startDate||'TBD'}${trip.activities?.length?' · '+trip.activities.join(', '):''}</div></div>
-        <button class="btn-o" onclick="App.go('home')">← Back</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="trip-edit-btn" onclick="App.openEditTrip('${trip.id}')">✏️ Edit Trip</button>
+          <button class="btn-o" onclick="App.go('home')">← Back</button>
+        </div>
       </div>
       <div class="pack-layout">
         <div id="list-area">${listHtml}</div>
@@ -893,16 +979,27 @@ Be specific with colors and styles. Only include clearly visible items.`,
 
   // ── WEATHER ───────────────────────────────────────
   async fetchWeather(tripId){
-    const loc=document.getElementById('wx-input')?.value?.trim();
+    const el=document.getElementById('wx-input');
+    const loc=(el?.value||'').trim();
     if(!loc){this.toast('Enter a city or zip code.');return;}
+    const btn=el?.nextElementSibling;if(btn){btn.textContent='…';btn.disabled=true;}
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
     try{
-      const raw=await callAI(`What is the typical weather in ${loc} around ${trip.startDate||'this time of year'}?
-Give a brief, accurate weather summary. Respond ONLY with JSON (no markdown):
-{"temp":"72°F / 22°C","description":"Warm and sunny with occasional clouds","emoji":"☀️","suggestions":["Light layers","Sunscreen recommended","Pack a light rain jacket just in case"]}`,400);
+      const raw=await callAI(`What is the typical weather in ${loc} around ${trip.startDate||'this time of year'}? Also give a short day-by-day forecast for ${trip.duration||7} days.
+Respond ONLY with JSON (no markdown):
+{"temp":"72°F / 22°C","description":"Warm and sunny","emoji":"☀️","days":[{"day":1,"forecast":"Sunny, 74°F"},{"day":2,"forecast":"Partly cloudy, 70°F"}]}`,600);
       const wx=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
-      trip.weather=wx;this.save(d);this.rPacking();
+      trip.weather=wx;trip.weatherLocation=loc;
+      // Update per-day weather if packing list exists
+      if(trip.packingList&&wx.days){
+        wx.days.forEach(wd=>{
+          const day=trip.packingList.find(d=>d.day===wd.day);
+          if(day)day.weather=wd.forecast||day.weather;
+        });
+      }
+      this.save(d);this.rPacking();this.toast('Weather updated for '+loc+' ✓');
     }catch(e){this.toast('Weather fetch failed: '+e.message);}
+    if(btn){btn.textContent='Update ↻';btn.disabled=false;}
   },
 
   // ── BAG MANAGEMENT ON TRIP ────────────────────────
@@ -1010,6 +1107,166 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
     }catch(e){
       if(area)area.innerHTML=`<div style="background:var(--pink-pale);border:1px solid var(--border2);border-radius:12px;padding:1.2rem;font-size:14px;color:var(--text2)">${aiErr(e)}</div>`;
     }
+  },
+
+
+  // ── SAVED OUTFIT GROUPS ──────────────────────────
+  rOutfits(){
+    const d=this.data();const ogs=d.outfitGroups||[];
+    const cards=ogs.map(og=>`
+      <div class="og-card">
+        <div class="og-name">${og.name}</div>
+        <div class="og-meta">${og.group||'Uncategorized'} · ${og.items.length} item${og.items.length!==1?'s':''}</div>
+        <div class="og-items">${og.items.map(it=>`<span class="og-item">${it}</span>`).join('')}</div>
+        <div class="og-actions">
+          <button class="btn-o btn-sm" onclick="App.ogAddToTrip('${og.id}')">+ Add to Trip</button>
+          <button class="btn-o btn-sm" onclick="App.ogEdit('${og.id}')">✏️</button>
+          <button class="btn-o btn-sm" style="color:#c0566b" onclick="App.ogDelete('${og.id}')">🗑️</button>
+        </div>
+      </div>`).join('');
+    // Group by category
+    const groups=[...new Set(ogs.map(o=>o.group||'Uncategorized'))];
+    const grouped=groups.map(g=>{
+      const inGroup=ogs.filter(o=>(o.group||'Uncategorized')===g);
+      return `<div style="margin-bottom:1.5rem">
+        <div class="st" style="margin-bottom:.8rem">${g}</div>
+        <div class="og-grid">${inGroup.map(og=>`
+          <div class="og-card">
+            <div class="og-name">${og.name}</div>
+            <div class="og-meta">${og.items.length} item${og.items.length!==1?'s':''}</div>
+            <div class="og-items">${og.items.map(it=>`<span class="og-item">${it}</span>`).join('')}</div>
+            <div class="og-actions">
+              <button class="btn-a btn-sm" onclick="App.ogAddToTrip('${og.id}')">+ Add to Trip</button>
+              <button class="btn-o btn-sm" onclick="App.ogEdit('${og.id}')">✏️</button>
+              <button class="btn-o btn-sm" style="color:#c0566b" onclick="App.ogDelete('${og.id}')">🗑️</button>
+            </div>
+          </div>`).join('')}
+          <div class="dash-tile" style="min-height:80px" onclick="App.openOG()"><div style="font-size:1.4rem">+</div><div>New outfit</div></div>
+        </div></div>`;
+    }).join('');
+    document.getElementById('main').innerHTML=`
+      <div class="grow">
+        <div><div class="gtitle"><span>Saved Outfits</span></div><div class="gsub">${ogs.length} saved outfit${ogs.length!==1?'s':''} — reuse them across any trip</div></div>
+        <button class="btn-a" onclick="App.openOG()">+ Save Outfit</button>
+      </div>
+      ${ogs.length===0?`<div class="empty-state"><div class="eico">👚</div><div>No saved outfits yet.<br>Save combinations you love to quickly add them to any trip.</div></div><div style="text-align:center;margin-top:1rem"><button class="btn-a" onclick="App.openOG()">+ Save your first outfit</button></div>`:grouped}
+      <div class="tip-box">💡 Save outfits you wear often — like your go-to travel look or gym kit. Then click "+ Add to Trip" to drop them onto any day of any trip.</div>`;
+  },
+  openOG(prefill){
+    this._ogEditId=null;
+    document.getElementById('og-name').value=prefill?.name||'';
+    document.getElementById('og-group').value=prefill?.group||'';
+    document.getElementById('og-item-input').value='';
+    // Render items
+    App._ogItems=prefill?.items?[...prefill.items]:[];
+    App._renderOGItems();
+    document.getElementById('m-og').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('og-name').focus(),100);
+  },
+  _renderOGItems(){
+    const el=document.getElementById('og-item-list');
+    if(!el)return;
+    el.innerHTML=App._ogItems.map((it,i)=>`<span style="background:var(--pink-pale);border-radius:20px;padding:3px 10px 3px 12px;font-size:12px;color:var(--pink-dark);display:flex;align-items:center;gap:5px">${it}<button onclick="App._ogItems.splice(${i},1);App._renderOGItems()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;line-height:1">×</button></span>`).join('');
+  },
+  ogAddItem(){
+    const inp=document.getElementById('og-item-input');
+    const val=inp.value.trim();if(!val)return;
+    if(!App._ogItems)App._ogItems=[];
+    App._ogItems.push(val);inp.value='';App._renderOGItems();
+  },
+  saveOG(){
+    const name=document.getElementById('og-name').value.trim();
+    const group=document.getElementById('og-group').value.trim()||'Uncategorized';
+    if(!name){this.toast('Please enter an outfit name.');return;}
+    if(!App._ogItems?.length){this.toast('Add at least one item.');return;}
+    const d=this.data();if(!d.outfitGroups)d.outfitGroups=[];
+    if(this._ogEditId){
+      const og=d.outfitGroups.find(o=>o.id===this._ogEditId);
+      if(og){og.name=name;og.group=group;og.items=[...App._ogItems];}
+    }else{
+      d.outfitGroups.push({id:'og'+Date.now(),name,group,items:[...App._ogItems]});
+    }
+    this.save(d);closeM('m-og');
+    this.toast(`👚 "${name}" saved!`);
+    if(this.view==='outfits')this.rOutfits();
+  },
+  ogEdit(ogId){
+    const d=this.data();const og=d.outfitGroups.find(o=>o.id===ogId);if(!og)return;
+    this._ogEditId=ogId;
+    this.openOG(og);
+  },
+  ogDelete(ogId){
+    if(!confirm('Delete this saved outfit?'))return;
+    const d=this.data();d.outfitGroups=d.outfitGroups.filter(o=>o.id!==ogId);
+    this.save(d);this.rOutfits();
+  },
+  ogAddToTrip(ogId){
+    const d=this.data();const og=d.outfitGroups.find(o=>o.id===ogId);if(!og)return;
+    if(!d.trips.length){this.toast('No trips yet — create a trip first!');return;}
+    // Pick trip
+    const tripNames=d.trips.map((t,i)=>(i+1)+': '+t.destination+' ('+(t.startDate||'TBD')+')').join(' | ');
+    const ti=prompt('Which trip? '+tripNames+' -- Enter number:');
+    if(!ti)return;
+    const trip=d.trips[+ti-1];if(!trip){this.toast('Invalid selection.');return;}
+    if(!trip.packingList?.length)trip.packingList=Array.from({length:trip.duration||7},(_,i)=>({day:i+1,weather:'',outfits:[]}));
+    const dayInput=prompt(`Which day? (1–${trip.packingList.length})
+Enter day number:`);
+    if(!dayInput)return;
+    const day=trip.packingList.find(d=>d.day===+dayInput);
+    if(!day){this.toast('Day not found.');return;}
+    day.outfits.push({id:'og'+Date.now(),emoji:'👗',name:og.name+': '+og.items.join(', '),occasion:'saved'});
+    this.save(d);
+    this.toast(`👚 "${og.name}" added to Day ${dayInput} of ${trip.destination}!`);
+    if(this.view==='packing'&&this.tripId===trip.id)this.rPacking();
+  },
+
+  // ── EDIT TRIP ─────────────────────────────────────
+  openEditTrip(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);if(!trip)return;
+    this._editTripId=tripId;
+    document.getElementById('et-dest').value=trip.destination||'';
+    document.getElementById('et-start').value=trip.startDate&&trip.startDate!=='TBD'?trip.startDate:'';
+    document.getElementById('et-end').value=trip.endDate||'';
+    document.getElementById('et-nights').value=trip.duration||'';
+    // Set activity chips
+    const acts=trip.activities||[];
+    document.querySelectorAll('#et-act-chips .chip').forEach(c=>{
+      c.classList.toggle('on',acts.some(a=>c.textContent.includes(a.replace(/^[^\s]+\s/,''))||a.includes(c.textContent.replace(/^[^\s]+\s/,''))));
+    });
+    document.getElementById('et-warn').style.display='none';
+    document.getElementById('m-edittrip').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('et-dest').focus(),100);
+  },
+  saveEditTrip(){
+    const dest=document.getElementById('et-dest').value.trim();
+    const start=document.getElementById('et-start').value;
+    const end=document.getElementById('et-end').value;
+    const nightsField=+document.getElementById('et-nights').value;
+    const acts=[...document.querySelectorAll('#et-act-chips .chip.on')].map(c=>c.textContent.trim());
+    if(!dest){this.toast('Please enter a destination.');return;}
+    // Calculate nights
+    let dur=nightsField;
+    if(start&&end){const calc=Math.round((new Date(end)-new Date(start))/86400000);if(calc>0)dur=calc;}
+    if(!dur||dur<1)dur=1;
+    const d=this.data();const trip=d.trips.find(t=>t.id===this._editTripId);
+    const oldDur=trip.duration||0;
+    trip.destination=dest;trip.startDate=start||'TBD';trip.endDate=end||'';trip.duration=dur;trip.activities=acts;
+    // Adjust packing list length
+    if(trip.packingList?.length){
+      if(dur>oldDur){
+        for(let i=oldDur+1;i<=dur;i++)trip.packingList.push({day:i,weather:'',outfits:[]});
+      }else if(dur<oldDur){
+        const warn=document.getElementById('et-warn');
+        if(trip.packingList.slice(dur).some(d=>(d.outfits||[]).length>0)){
+          warn.textContent=`⚠️ Reducing to ${dur} nights will remove outfits from days ${dur+1}–${oldDur}. Changes saved anyway.`;
+          warn.style.display='block';
+        }
+        trip.packingList=trip.packingList.slice(0,dur);
+      }
+    }
+    this.save(d);closeM('m-edittrip');
+    this.toast(`Trip updated to ${dest}, ${dur} nights ✓`);
+    this.rPacking();
   },
 
   // ── SETTINGS ──────────────────────────────────────
