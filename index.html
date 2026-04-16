@@ -190,6 +190,32 @@ select.finput{cursor:pointer}
 .trip-edit-btn{font-size:12px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:.15s}
 .trip-edit-btn:hover{border-color:var(--pink);color:var(--pink-dark);background:var(--pink-pale)}
 
+
+/* CLOSET PICKER inside modal */
+.closet-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;max-height:260px;overflow-y:auto;padding:2px;margin-top:6px}
+.cp-item{background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .15s;user-select:none;position:relative}
+.cp-item:hover{border-color:var(--pink);background:var(--pink-pale)}
+.cp-item.selected{border-color:var(--pink-dark);background:var(--pink-pale)}
+.cp-item.selected::after{content:'✓';position:absolute;top:3px;right:4px;font-size:10px;color:var(--pink-dark);font-weight:700}
+.cp-item.dirty-item{opacity:.45}
+.cp-item .cp-emo{font-size:1.5rem;line-height:1;margin-bottom:3px}
+.cp-item .cp-img{width:44px;height:44px;border-radius:6px;object-fit:cover;margin:0 auto 3px;display:block}
+.cp-item .cp-name{font-size:10px;color:var(--text);font-weight:500;word-break:break-word;line-height:1.2}
+.cp-item .cp-type{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;margin-top:1px}
+.cp-filter{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.cp-fchip{padding:4px 10px;border-radius:15px;font-size:11px;border:1.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:.12s;font-family:inherit}
+.cp-fchip.active{background:var(--pink-pale);border-color:var(--pink-dark);color:var(--pink-dark);font-weight:600}
+/* OUTFIT BLOCK inside day card — named section with item chips */
+.outfit-block{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.outfit-block:last-child{margin-bottom:0}
+.ob-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.ob-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px}
+.ob-actions{display:flex;gap:4px}
+.ob-items{display:flex;flex-wrap:wrap;gap:5px}
+.ob-chip{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:3px 9px;font-size:11px;color:var(--text);display:flex;align-items:center;gap:4px}
+.ob-chip img{width:16px;height:16px;border-radius:3px;object-fit:cover}
+.ob-empty{font-size:11px;color:var(--text3);font-style:italic}
+
 @media(max-width:860px){.sidebar{display:none}.main{padding:1.5rem}.pack-layout{grid-template-columns:1fr}}
 @media(max-width:500px){.gtitle{font-size:1.5rem}.frow{grid-template-columns:1fr}}
 </style>
@@ -347,12 +373,22 @@ select.finput{cursor:pointer}
 
 <!-- MODAL: Add Outfit to Day -->
 <div id="m-outfit" class="modal-backdrop hidden">
- <div class="modal modal-sm">
-  <div class="mhead"><div class="mtitle">Add Outfit</div><button class="mclose" onclick="closeM('m-outfit')">×</button></div>
+ <div class="modal" style="max-width:560px">
+  <div class="mhead"><div class="mtitle">Add Outfit to Day</div><button class="mclose" onclick="closeM('m-outfit')">×</button></div>
   <div class="msub">Adding to <span id="ao-day" style="color:var(--pink-dark);font-weight:600"></span></div>
-  <label class="flabel">Description</label><input class="finput" id="ao-name" placeholder="e.g. Blue sundress + sandals" onkeydown="if(event.key==='Enter')App.saveOutfit()">
-  <label class="flabel">Emoji</label><input class="finput" id="ao-emo" placeholder="👗" maxlength="4" style="width:80px;font-size:1.2rem;text-align:center">
-  <div class="mactions"><button class="btn-o" onclick="closeM('m-outfit')">Cancel</button><button class="btn-a" onclick="App.saveOutfit()">Add</button></div>
+  <label class="flabel">Outfit name</label>
+  <input class="finput" id="ao-name" placeholder="e.g. Beach Day, Dinner Look, Travel Outfit">
+  <label class="flabel" style="margin-top:1rem">Select items from your closet</label>
+  <div id="ao-cp-filter" class="cp-filter"></div>
+  <div id="ao-closet-picker" class="closet-picker"></div>
+  <div style="margin-top:8px;font-size:12px;color:var(--text3)" id="ao-selected-count">0 items selected</div>
+  <label class="flabel" style="margin-top:.8rem">Or type a custom item</label>
+  <div style="display:flex;gap:6px">
+   <input class="finput" id="ao-custom" placeholder="e.g. White sneakers" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();App.aoAddCustom()}">
+   <button class="btn-o btn-sm" onclick="App.aoAddCustom()">+ Add</button>
+  </div>
+  <div id="ao-custom-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-outfit')">Cancel</button><button class="btn-a" onclick="App.saveOutfit()">Add Outfit</button></div>
  </div>
 </div>
 
@@ -410,10 +446,16 @@ select.finput{cursor:pointer}
   <label class="flabel">Group / Category</label>
   <input class="finput" id="og-group" placeholder="e.g. Casual, Formal, Activewear, Vacation" list="og-group-list">
   <datalist id="og-group-list"><option value="Casual"><option value="Formal"><option value="Activewear"><option value="Vacation"><option value="Beach"><option value="Business"><option value="Evening"></datalist>
-  <label class="flabel">Items in this outfit</label>
-  <div id="og-item-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;margin-bottom:8px"></div>
-  <input class="finput" id="og-item-input" placeholder="Type item name and press Enter (e.g. White linen shirt)" onkeydown="if(event.key==='Enter'){event.preventDefault();App.ogAddItem()}">
-  <button class="btn-o btn-sm" style="margin-top:6px" onclick="App.ogAddItem()">+ Add item</button>
+  <label class="flabel">Select items from your closet</label>
+  <div id="og-cp-filter" class="cp-filter"></div>
+  <div id="og-closet-picker" class="closet-picker"></div>
+  <div style="margin-top:6px;font-size:12px;color:var(--text3)" id="og-selected-count">0 items selected</div>
+  <label class="flabel" style="margin-top:.8rem">Or add a custom item</label>
+  <div style="display:flex;gap:6px">
+   <input class="finput" id="og-item-input" placeholder="e.g. White linen shirt" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();App.ogAddCustomItem()}">
+   <button class="btn-o btn-sm" onclick="App.ogAddCustomItem()">+ Add</button>
+  </div>
+  <div id="og-item-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div>
   <div class="mactions"><button class="btn-o" onclick="closeM('m-og')">Cancel</button><button class="btn-a" onclick="App.saveOG()">Save Outfit</button></div>
  </div>
 </div>
@@ -950,15 +992,23 @@ Be specific with colors and styles. Only include clearly visible items.`,
               <div class="day-title">Day ${day.day}${day.weather?`<span class="day-wx">${day.weather}</span>`:''}</div>
               <button class="add-outfit-btn" onclick="App.openAddOutfit('${trip.id}',${di})">+ Add outfit</button>
             </div>
-            ${(day.outfits||[]).map((o,oi)=>`
-              <div class="outfit-row">
-                ${o.image?`<img class="outfit-thumb" src="${o.image}">`:`<span class="outfit-emo">${o.emoji||'👕'}</span>`}
-                <span class="outfit-name">${o.name}</span>
-                ${laundry.includes(o.id)?'<span class="outfit-dirty">🧺 dirty</span>':''}
-                <button class="ibtn" onclick="App.editOutfit('${trip.id}',${di},${oi})" title="Edit">✏️</button>
-                <button class="ibtn red" onclick="App.delOutfit('${trip.id}',${di},${oi})" title="Remove">✕</button>
-              </div>`).join('')}
-            ${!(day.outfits||[]).length?`<div style="font-size:12px;color:var(--text3);padding:6px 0;font-style:italic">No outfits yet</div>`:''}
+            ${(day.outfits||[]).map((o,oi)=>{
+              const isDirty=o.closetItems?.some(ci=>laundry.includes(ci.id))||laundry.includes(o.id);
+              const chips=(o.closetItems||[]).map(ci=>`<span class="ob-chip">${ci.image?`<img src="${ci.image}">`:`<span>${ci.emoji||'👕'}</span>`}${ci.name}</span>`).join('');
+              const customChips=(o.customItems||[]).map(c=>`<span class="ob-chip">✏️ ${c}</span>`).join('');
+              const allChips=chips+customChips;
+              return `<div class="outfit-block">
+                <div class="ob-head">
+                  <div class="ob-title">${o.emoji||'👗'} ${o.name}${isDirty?'<span class="outfit-dirty">🧺 dirty</span>':''}</div>
+                  <div class="ob-actions">
+                    <button class="ibtn" onclick="App.editOutfit('${trip.id}',${di},${oi})" title="Edit">✏️</button>
+                    <button class="ibtn red" onclick="App.delOutfit('${trip.id}',${di},${oi})" title="Remove">✕</button>
+                  </div>
+                </div>
+                <div class="ob-items">${allChips||'<span class="ob-empty">No items added</span>'}</div>
+              </div>`;
+            }).join('')}
+            ${!(day.outfits||[]).length?`<div style="font-size:12px;color:var(--text3);padding:6px 0;font-style:italic">No outfits yet — click "+ Add outfit" above</div>`:''}
           </div>`).join('');
     }
 
@@ -1052,25 +1102,128 @@ Respond ONLY with JSON (no markdown):
     trip.packingList=Array.from({length:trip.duration||7},(_,i)=>({day:i+1,weather:'',outfits:[]}));
     this.save(d);this.go('packing',tripId);
   },
+  // Shared closet picker state
+  _pickerSelected:[],
+  _pickerCustom:[],
+  _pickerMode:null, // 'outfit' or 'og'
+  _pickerFilter:'all',
+
+  _buildClosetPicker(pickerId,filterId,countId,mode){
+    const d=this.data();
+    this._pickerMode=mode;
+    this._pickerFilter='all';
+    const types=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear'];
+    const filterEl=document.getElementById(filterId);
+    if(filterEl){
+      filterEl.innerHTML=types.map(t=>`<button class="cp-fchip${t==='all'?' active':''}" onclick="App._filterPicker('${t}','${filterId}','${pickerId}')">${t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
+    }
+    this._renderPicker(pickerId,countId,'all');
+  },
+
+  _filterPicker(type,filterId,pickerId){
+    this._pickerFilter=type;
+    document.querySelectorAll(`#${filterId} .cp-fchip`).forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===type||(type==='all'&&b.textContent==='All')));
+    const countId=pickerId==='ao-closet-picker'?'ao-selected-count':'og-selected-count';
+    this._renderPicker(pickerId,countId,type);
+  },
+
+  _renderPicker(pickerId,countId,filter){
+    const d=this.data();
+    const el=document.getElementById(pickerId);if(!el)return;
+    const items=filter==='all'?d.closet:d.closet.filter(c=>c.type===filter);
+    el.innerHTML=items.length===0
+      ?`<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text3);font-size:13px">${filter==='all'?'No items in your closet yet — add some in My Closet':'No '+filter+' in your closet'}</div>`
+      :items.map(c=>{
+        const sel=this._pickerSelected.some(s=>s.id===c.id);
+        const dirty=d.laundry.includes(c.id);
+        return `<div class="cp-item${sel?' selected':''}${dirty?' dirty-item':''}" onclick="App._togglePicker('${c.id}','${pickerId}','${countId}')" title="${c.name}${dirty?' (in laundry)':''}">
+          ${c.image?`<img class="cp-img" src="${c.image}">`:`<div class="cp-emo">${c.emoji||'👕'}</div>`}
+          <div class="cp-name">${c.name}</div>
+        </div>`;
+      }).join('');
+    this._updatePickerCount(countId);
+  },
+
+  _togglePicker(itemId,pickerId,countId){
+    const d=this.data();const item=d.closet.find(c=>c.id===itemId);if(!item)return;
+    const idx=this._pickerSelected.findIndex(s=>s.id===itemId);
+    if(idx>=0)this._pickerSelected.splice(idx,1);
+    else this._pickerSelected.push({id:item.id,name:item.name,emoji:item.emoji||'👕',image:item.image||null,type:item.type});
+    this._renderPicker(pickerId,countId,this._pickerFilter);
+  },
+
+  _updatePickerCount(countId){
+    const el=document.getElementById(countId);
+    if(el)el.textContent=this._pickerSelected.length+' item'+(this._pickerSelected.length!==1?'s':'')+' selected';
+  },
+
+  aoAddCustom(){
+    const inp=document.getElementById('ao-custom');const val=inp.value.trim();if(!val)return;
+    this._pickerCustom.push(val);inp.value='';
+    const el=document.getElementById('ao-custom-list');
+    if(el)el.innerHTML=this._pickerCustom.map((v,i)=>`<span style="background:var(--pink-pale);border-radius:20px;padding:3px 10px 3px 12px;font-size:11px;color:var(--pink-dark);display:flex;align-items:center;gap:4px">${v}<button onclick="App._pickerCustom.splice(${i},1);App.aoAddCustom.call(App);document.getElementById('ao-custom').value=''" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;line-height:1">×</button></span>`).join('');
+  },
+
   openAddOutfit(tripId,dayIdx){
     this._outfitTripId=tripId;this._outfitDayIdx=dayIdx;
+    this._pickerSelected=[];this._pickerCustom=[];
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
-    document.getElementById('ao-day').textContent=`Day ${trip.packingList[dayIdx].day} — ${trip.destination}`;
-    document.getElementById('ao-name').value='';document.getElementById('ao-emo').value='';
+    document.getElementById('ao-day').textContent='Day '+trip.packingList[dayIdx].day+' — '+trip.destination;
+    document.getElementById('ao-name').value='';
+    document.getElementById('ao-custom-list').innerHTML='';
+    this._buildClosetPicker('ao-closet-picker','ao-cp-filter','ao-selected-count','outfit');
     document.getElementById('m-outfit').classList.remove('hidden');
     setTimeout(()=>document.getElementById('ao-name').focus(),100);
   },
+
   saveOutfit(){
     const name=document.getElementById('ao-name').value.trim();
-    const emoji=document.getElementById('ao-emo').value.trim()||'👗';
-    if(!name){this.toast('Please enter a description.');return;}
+    if(!name){this.toast('Please enter an outfit name.');return;}
+    if(!this._pickerSelected.length&&!this._pickerCustom.length){this.toast('Select at least one item from your closet, or add a custom item.');return;}
+    const emoji=this._pickerSelected[0]?.emoji||'👗';
     const d=this.data();const trip=d.trips.find(t=>t.id===this._outfitTripId);
-    trip.packingList[this._outfitDayIdx].outfits.push({id:'o'+Date.now(),emoji,name,occasion:'manual'});
-    this.save(d);closeM('m-outfit');this.toast(`${emoji} Added!`);this.rPacking();
+    trip.packingList[this._outfitDayIdx].outfits.push({
+      id:'o'+Date.now(),name,emoji,
+      closetItems:[...this._pickerSelected],
+      customItems:[...this._pickerCustom],
+      occasion:'manual'
+    });
+    this.save(d);closeM('m-outfit');this.toast(emoji+' "'+name+'" added!');this.rPacking();
   },
+
   editOutfit(tripId,di,oi){
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);const o=trip.packingList[di].outfits[oi];
-    const n=prompt('Edit outfit:',o.name);if(n?.trim()){o.name=n.trim();this.save(d);this.rPacking();}
+    // Re-open the outfit modal pre-filled for editing
+    this._outfitTripId=tripId;this._outfitDayIdx=di;
+    this._pickerSelected=o.closetItems?[...o.closetItems]:[];
+    this._pickerCustom=o.customItems?[...o.customItems]:[];
+    document.getElementById('ao-day').textContent='Day '+trip.packingList[di].day+' — '+trip.destination+' (editing)';
+    document.getElementById('ao-name').value=o.name;
+    // Render custom items
+    const el=document.getElementById('ao-custom-list');
+    if(el)el.innerHTML=this._pickerCustom.map((v,i)=>`<span style="background:var(--pink-pale);border-radius:20px;padding:3px 10px 3px 12px;font-size:11px;color:var(--pink-dark);display:flex;align-items:center;gap:4px">${v}<button onclick="App._pickerCustom.splice(${i},1)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">×</button></span>`).join('');
+    this._buildClosetPicker('ao-closet-picker','ao-cp-filter','ao-selected-count','outfit');
+    // Override the save to replace instead of push
+    this._editOutfitIdx=oi;
+    this._isEditingOutfit=true;
+    document.getElementById('m-outfit').classList.remove('hidden');
+    // Patch saveOutfit to replace
+    const origSave=App.saveOutfit.bind(App);
+    App._saveOutfitOnce=()=>{
+      const name=document.getElementById('ao-name').value.trim();
+      if(!name){App.toast('Please enter an outfit name.');return;}
+      const emoji=App._pickerSelected[0]?.emoji||'👗';
+      const d2=App.data();const trip2=d2.trips.find(t=>t.id===App._outfitTripId);
+      trip2.packingList[App._outfitDayIdx].outfits[App._editOutfitIdx]={
+        ...trip2.packingList[App._outfitDayIdx].outfits[App._editOutfitIdx],
+        name,emoji,closetItems:[...App._pickerSelected],customItems:[...App._pickerCustom]
+      };
+      App.save(d2);closeM('m-outfit');App.toast('Outfit updated!');App.rPacking();
+      App._isEditingOutfit=false;
+    };
+    // Temporarily override
+    const saveBtn=document.querySelector('#m-outfit .btn-a');
+    if(saveBtn)saveBtn.onclick=()=>App._saveOutfitOnce();
   },
   delOutfit(tripId,di,oi){
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
@@ -1134,7 +1287,7 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
           <div class="og-card">
             <div class="og-name">${og.name}</div>
             <div class="og-meta">${og.items.length} item${og.items.length!==1?'s':''}</div>
-            <div class="og-items">${og.items.map(it=>`<span class="og-item">${it}</span>`).join('')}</div>
+            <div class="og-items">${(og.closetItems||og.items||[]).map(it=>typeof it==='string'?`<span class="og-item">${it}</span>`:`<span class="og-item">${it.emoji||'👕'} ${it.name}</span>`).join('')}</div>
             <div class="og-actions">
               <button class="btn-a btn-sm" onclick="App.ogAddToTrip('${og.id}')">+ Add to Trip</button>
               <button class="btn-o btn-sm" onclick="App.ogEdit('${og.id}')">✏️</button>
@@ -1154,40 +1307,50 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
   },
   openOG(prefill){
     this._ogEditId=null;
+    // Reset picker for og mode
+    this._pickerSelected=[];this._pickerCustom=[];
     document.getElementById('og-name').value=prefill?.name||'';
     document.getElementById('og-group').value=prefill?.group||'';
     document.getElementById('og-item-input').value='';
-    // Render items
-    App._ogItems=prefill?.items?[...prefill.items]:[];
-    App._renderOGItems();
+    document.getElementById('og-item-list').innerHTML='';
+    // If editing, pre-fill selected items by matching closet items
+    if(prefill?.closetItems){
+      this._pickerSelected=[...prefill.closetItems];
+    } else if(prefill?.items){
+      // Legacy text items — put as custom
+      this._pickerCustom=[...prefill.items];
+    }
+    this._buildClosetPicker('og-closet-picker','og-cp-filter','og-selected-count','og');
+    this._renderOGCustomItems();
     document.getElementById('m-og').classList.remove('hidden');
     setTimeout(()=>document.getElementById('og-name').focus(),100);
   },
-  _renderOGItems(){
+  _renderOGCustomItems(){
     const el=document.getElementById('og-item-list');
     if(!el)return;
-    el.innerHTML=App._ogItems.map((it,i)=>`<span style="background:var(--pink-pale);border-radius:20px;padding:3px 10px 3px 12px;font-size:12px;color:var(--pink-dark);display:flex;align-items:center;gap:5px">${it}<button onclick="App._ogItems.splice(${i},1);App._renderOGItems()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;line-height:1">×</button></span>`).join('');
+    el.innerHTML=this._pickerCustom.map((it,i)=>`<span style="background:var(--pink-pale);border-radius:20px;padding:3px 10px 3px 12px;font-size:11px;color:var(--pink-dark);display:flex;align-items:center;gap:4px">${it}<button onclick="App._pickerCustom.splice(${i},1);App._renderOGCustomItems()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;line-height:1">×</button></span>`).join('');
   },
-  ogAddItem(){
+  ogAddCustomItem(){
     const inp=document.getElementById('og-item-input');
     const val=inp.value.trim();if(!val)return;
-    if(!App._ogItems)App._ogItems=[];
-    App._ogItems.push(val);inp.value='';App._renderOGItems();
+    if(!this._pickerCustom)this._pickerCustom=[];
+    this._pickerCustom.push(val);inp.value='';this._renderOGCustomItems();
   },
   saveOG(){
     const name=document.getElementById('og-name').value.trim();
     const group=document.getElementById('og-group').value.trim()||'Uncategorized';
     if(!name){this.toast('Please enter an outfit name.');return;}
-    if(!App._ogItems?.length){this.toast('Add at least one item.');return;}
+    if(!this._pickerSelected?.length&&!this._pickerCustom?.length){this.toast('Select at least one item from your closet or add a custom item.');return;}
     const d=this.data();if(!d.outfitGroups)d.outfitGroups=[];
+    const ogData={name,group,closetItems:[...(this._pickerSelected||[])],items:[...(this._pickerCustom||[])]};
     if(this._ogEditId){
       const og=d.outfitGroups.find(o=>o.id===this._ogEditId);
-      if(og){og.name=name;og.group=group;og.items=[...App._ogItems];}
+      if(og){Object.assign(og,ogData);}
     }else{
-      d.outfitGroups.push({id:'og'+Date.now(),name,group,items:[...App._ogItems]});
+      d.outfitGroups.push({id:'og'+Date.now(),...ogData});
     }
     this.save(d);closeM('m-og');
-    this.toast(`👚 "${name}" saved!`);
+    this.toast('👚 "'+name+'" saved!');
     if(this.view==='outfits')this.rOutfits();
   },
   ogEdit(ogId){
