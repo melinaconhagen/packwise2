@@ -258,6 +258,37 @@ select.finput{cursor:pointer}
 /* EDIT ITEM MODAL */
 .edit-item-modal{max-width:380px}
 
+
+/* REPEAT BADGE on outfit rows */
+.repeat-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--gold);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:4px;letter-spacing:.02em}
+
+/* WHAT TO WEAR modal */
+.wyw-card{background:linear-gradient(135deg,var(--pink-pale),#f5edf8);border:1.5px solid var(--border2);border-radius:var(--radius);padding:1.8rem;text-align:center;margin-bottom:1rem}
+.wyw-emoji{font-size:3.5rem;margin-bottom:.5rem;line-height:1}
+.wyw-name{font-size:1.3rem;font-weight:700;margin-bottom:.3rem}
+.wyw-type{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem}
+.wyw-items{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+
+/* AI TIPS box */
+.ai-tips-box{background:linear-gradient(135deg,#fdf7ee,#fdf0f2);border:1.5px solid var(--border2);border-radius:var(--radius);padding:1.2rem 1.4rem;margin-bottom:12px}
+.ai-tips-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mauve);margin-bottom:.6rem}
+.ai-tips-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
+.ai-tips-list li{font-size:12px;color:var(--text2);padding-left:16px;position:relative;line-height:1.5}
+.ai-tips-list li::before{content:'✦';position:absolute;left:0;color:var(--gold);font-size:9px;top:3px}
+
+/* AUDIT modal */
+.audit-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.audit-item:last-child{border-bottom:none}
+.audit-icon{font-size:1.4rem;flex-shrink:0;margin-top:1px}
+.audit-text{font-size:13px;color:var(--text)}
+.audit-text strong{display:block;font-weight:600;margin-bottom:2px}
+.audit-text span{color:var(--text2);font-size:12px}
+.audit-ok{text-align:center;padding:1.5rem;color:var(--sage);font-size:14px;font-weight:600}
+
+/* WYW button on home/closet */
+.wyw-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:linear-gradient(135deg,var(--pink-pale),#f0eaf8);color:var(--pink-dark);border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+.wyw-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(180,100,120,.15)}
+
 @media(max-width:860px){.sidebar{display:none}.main{padding:1.5rem 1rem 80px}.pack-layout{grid-template-columns:1fr}.mobile-nav{display:block}}
 @media(max-width:500px){.gtitle{font-size:1.5rem}.frow{grid-template-columns:1fr}}
 </style>
@@ -623,6 +654,30 @@ select.finput{cursor:pointer}
  </div>
 </div>
 
+
+<!-- MODAL: What Should I Wear? -->
+<div id="m-wyw" class="modal-backdrop hidden">
+ <div class="modal modal-sm">
+  <div class="mhead"><div class="mtitle">✨ Today's Outfit</div><button class="mclose" onclick="closeM('m-wyw')">×</button></div>
+  <div class="msub">A random outfit from your clean closet items</div>
+  <div id="wyw-content"></div>
+  <div class="mactions">
+   <button class="btn-o" onclick="closeM('m-wyw')">Done</button>
+   <button class="btn-a" onclick="App.pickOutfit()">🎲 Pick another</button>
+  </div>
+ </div>
+</div>
+
+<!-- MODAL: What Am I Missing? AI Audit -->
+<div id="m-audit" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">🔍 Packing Audit</div><button class="mclose" onclick="closeM('m-audit')">×</button></div>
+  <div class="msub" id="audit-sub">Checking your closet against your trip…</div>
+  <div id="audit-content"><div class="ai-load"><div class="spin"></div>AI is auditing your packing…</div></div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-audit')">Close</button></div>
+ </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -823,6 +878,7 @@ const App={
        <div class="gsub">${d.trips.length===0?'Add your first trip to get started.':`You have ${d.trips.length} trip${d.trips.length>1?'s':''} planned.`}</div></div>
        <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;margin-top:4px">
          <button class="btn-a" onclick="App.openAddTrip()" style="white-space:nowrap">+ New Trip</button>
+         <button class="wyw-btn" onclick="App.pickOutfit()">🎲 What to wear?</button>
          <button class="export-btn" onclick="App.exportData()">&#x2B07; Export data</button>
        </div>
       </div>${stats}${trips}`;
@@ -977,6 +1033,7 @@ const App={
     document.getElementById('main').innerHTML=`
       <div class="grow">
         <div><div class="gtitle"><span>My Closet</span></div><div class="gsub">${d.closet.length} items — tap any item to manage it</div></div>
+        ${d.closet.length>0?`<button class="wyw-btn" onclick="App.pickOutfit()">🎲 What to wear?</button>`:''}
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text2)">
         📦 Import clothing:
@@ -1211,13 +1268,15 @@ Be specific with colors and styles. Only include clearly visible items.`,
       </div>
     </div>`;
 
-    const sidebar=`
+    const tipsHtml=trip.aiTips?`<div class="ai-tips-box"><div class="ai-tips-title">✦ Packing Tips</div><ul class="ai-tips-list">${trip.aiTips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`:'';    const sidebar=`
       ${wxCard}
+      ${tipsHtml}
       <div class="side-widget">
         <div class="sw-title">🧳 Bags on this trip</div>
         ${bagCapHtml}
         <button class="btn-o btn-sm" style="margin-top:8px;width:100%" onclick="App.addBagToTrip('${trip.id}')">+ Add another bag</button>
-      </div>`;
+      </div>
+      <button class="btn-o" style="width:100%;margin-top:8px;font-size:12px" onclick="App.auditPacking('${trip.id}')">🔍 What am I missing?</button>`;
 
     const haslist=trip.packingList&&trip.packingList.length>0;
 
@@ -1275,6 +1334,12 @@ Be specific with colors and styles. Only include clearly visible items.`,
     } else {
       // ── PLAN MODE ──
       const laundry=d.laundry||[];
+      // Build item usage count map for repeat warnings
+      const itemUsage={};
+      (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
+        (o.closetItems||[]).forEach(ci=>{itemUsage[ci.id]=(itemUsage[ci.id]||0)+1;});
+        if(o.id&&!o.closetItems?.length)itemUsage[o.id]=(itemUsage[o.id]||0)+1;
+      }));
       listHtml=`<div class="sh"><div class="st">Day-by-Day Outfits</div><button class="btn-o btn-sm" onclick="App.genList('${trip.id}')">↻ Regenerate</button></div>`
         +(trip.packingList||[]).map((day,di)=>`
           <div class="day-card">
@@ -1284,7 +1349,7 @@ Be specific with colors and styles. Only include clearly visible items.`,
             </div>
             ${(day.outfits||[]).map((o,oi)=>{
               const isDirty=o.closetItems?.some(ci=>laundry.includes(ci.id))||laundry.includes(o.id);
-              const chips=(o.closetItems||[]).map(ci=>`<span class="ob-chip">${ci.image?`<img src="${ci.image}">`:`<span>${ci.emoji||'👕'}</span>`}${ci.name}</span>`).join('');
+              const chips=(o.closetItems||[]).map(ci=>{const cnt=itemUsage[ci.id]||0;return `<span class="ob-chip">${ci.image?`<img src="${ci.image}">`:`<span>${ci.emoji||'👕'}</span>`}${ci.name}${cnt>1?`<span class="repeat-badge">×${cnt}</span>`:''}</span>`;}).join('');
               const customChips=(o.customItems||[]).map(c=>`<span class="ob-chip">✏️ ${c}</span>`).join('');
               const allChips=chips+customChips;
               return `<div class="outfit-block">
@@ -1580,6 +1645,8 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
       const dirtyNeeded=dirty.filter(c=>result.days.some(day=>(day.outfits||[]).some(o=>o.name.toLowerCase().includes(c.name.toLowerCase()))));
       this.go('packing',tripId);
       if(dirtyNeeded.length)setTimeout(()=>this.toast(`🧺 You may need to wash: ${dirtyNeeded.map(c=>c.name).join(', ')}`,`warn`),700);
+      // Fetch AI tips in background (non-blocking)
+      this._fetchTips(tripId);
     }catch(e){
       if(area)area.innerHTML=`<div style="background:var(--pink-pale);border:1px solid var(--border2);border-radius:12px;padding:1.2rem;font-size:14px;color:var(--text2)">${aiErr(e)}</div>`;
     }
@@ -1798,6 +1865,80 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
     if(v){localStorage.setItem('pw_api',v);this.toast('API key saved! ✨');this.rSettings();}
     else this.toast('Please paste your API key.');
   },
+
+  // ── WHAT TO WEAR ──────────────────────────────────
+  pickOutfit(){
+    const d=this.data();
+    const clean=d.closet.filter(c=>!d.laundry.includes(c.id));
+    if(clean.length===0){this.toast('Your closet is empty or everything is in laundry! 🧺');return;}
+    // Build a random outfit: pick a top + bottom (or dress), optionally shoes/accessories
+    const tops=clean.filter(c=>['tops','dresses','activewear','swimwear'].includes(c.type));
+    const bottoms=clean.filter(c=>c.type==='bottoms');
+    const shoes=clean.filter(c=>c.type==='shoes');
+    const acc=clean.filter(c=>c.type==='accessories');
+    const pick=arr=>arr.length?arr[Math.floor(Math.random()*arr.length)]:null;
+    const base=pick(tops);
+    if(!base){this.toast('Add some tops to your closet first!');return;}
+    const items=[base];
+    if(base.type!=='dresses'){const b=pick(bottoms);if(b)items.push(b);}
+    const s=pick(shoes);if(s)items.push(s);
+    if(Math.random()>.5){const a=pick(acc);if(a)items.push(a);}
+    const html=`<div class="wyw-card">
+      <div class="wyw-items">${items.map(it=>`<span style="font-size:2.5rem">${it.emoji||'👕'}</span>`).join('')}</div>
+      <div class="wyw-name" style="margin-top:.8rem">${items.map(i=>i.name).join(' + ')}</div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);text-align:center">Only showing clean items from your closet</div>`;
+    document.getElementById('wyw-content').innerHTML=html;
+    document.getElementById('m-wyw').classList.remove('hidden');
+  },
+
+  // ── AI PACKING TIPS ───────────────────────────────
+  async _fetchTips(tripId){
+    try{
+      const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+      if(!trip||trip.aiTips)return; // already fetched
+      const raw=await callAI(`Give exactly 3 short, specific, practical packing tips for a trip to ${trip.destination} for ${trip.duration} nights in ${trip.startDate||'upcoming months'}, focusing on activities: ${trip.activities?.join(', ')||'general travel'}.
+Return ONLY a JSON array of 3 strings, no markdown: ["Tip one","Tip two","Tip three"]
+Each tip should be 1 sentence, specific to this destination and activities. Be concrete and opinionated.`,400);
+      const tips=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      const d2=this.data();const trip2=d2.trips.find(t=>t.id===tripId);
+      if(trip2){trip2.aiTips=tips;this.save(d2);}
+      if(this.view==='packing'&&this.tripId===tripId)this.rPacking();
+    }catch(e){/* tips are non-critical, fail silently */}
+  },
+
+  // ── WHAT AM I MISSING? AUDIT ──────────────────────
+  async auditPacking(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    document.getElementById('audit-sub').textContent=`Auditing your closet for ${trip.destination}…`;
+    document.getElementById('audit-content').innerHTML='<div class="ai-load"><div class="spin"></div>AI is auditing your packing…</div>';
+    document.getElementById('m-audit').classList.remove('hidden');
+    const closet=d.closet.filter(c=>!d.laundry.includes(c.id));
+    const prompt=`You are a packing expert. Compare this traveller's closet against their trip needs and identify gaps.
+Trip: ${trip.destination}, ${trip.duration} nights, activities: ${trip.activities?.join(', ')||'general travel'}
+Closet items: ${closet.length?closet.map(c=>`${c.name} (${c.type})`).join(', '):'(empty)'}
+Packing list: ${(trip.packingList||[]).flatMap(d=>(d.outfits||[]).map(o=>o.name)).join(', ')||'(not generated yet)'}
+
+Find 2-5 specific gaps. For each gap, note: what's missing, why it matters for this trip.
+Respond ONLY with JSON array (no markdown):
+[{"icon":"👟","gap":"Running shoes","reason":"You have Gym listed but no activewear footwear in your closet"},...]
+If closet covers everything well, return: [{"icon":"✅","gap":"All covered!","reason":"Your closet looks well-stocked for this trip"}]`;
+    try{
+      const raw=await callAI(prompt,600);
+      const gaps=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      const html=gaps[0]?.gap==='All covered!'
+        ?`<div class="audit-ok">✅ Your closet looks well-stocked for this trip!</div>`
+        :gaps.map(g=>`<div class="audit-item">
+            <div class="audit-icon">${g.icon||'⚠️'}</div>
+            <div class="audit-text"><strong>${g.gap}</strong><span>${g.reason}</span></div>
+          </div>`).join('');
+      document.getElementById('audit-content').innerHTML=html;
+      document.getElementById('audit-sub').textContent=`Found ${gaps[0]?.gap==='All covered!'?'no':gaps.length} gap${gaps.length!==1?'s':''} for ${trip.destination}`;
+    }catch(e){
+      document.getElementById('audit-content').innerHTML=`<div style="color:var(--pink-dark);font-size:14px;padding:1rem">${aiErr(e)}</div>`;
+    }
+  },
+
   clearKey(){
     confirmDlg('Remove API key?','This will disable AI features until you add a new key.','🔑','Remove').then(()=>{
       localStorage.removeItem('pw_api');this.toast('Key removed.');this.rSettings();
