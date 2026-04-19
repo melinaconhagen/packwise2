@@ -289,6 +289,16 @@ select.finput{cursor:pointer}
 .wyw-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:linear-gradient(135deg,var(--pink-pale),#f0eaf8);color:var(--pink-dark);border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
 .wyw-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(180,100,120,.15)}
 
+/* EMOJI PICKER */
+.ep-wrap{background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:.9rem;max-height:300px;overflow-y:auto;margin-bottom:4px}
+.ep-cats{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.ep-cat{padding:4px 10px;border-radius:20px;font-size:11px;border:1.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:.12s;font-family:inherit;white-space:nowrap}
+.ep-cat.on{background:var(--text);color:#fff;border-color:var(--text)}
+.ep-sub{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin:8px 0 5px}
+.ep-grid{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px}
+.ep-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;border-radius:8px;cursor:pointer;border:1.5px solid transparent;transition:all .12s;background:var(--surface)}
+.ep-btn:hover{border-color:var(--pink);background:var(--pink-pale);transform:scale(1.1)}
+.ep-btn.on{border-color:var(--pink-dark);background:var(--pink-pale)}
 @media(max-width:860px){.sidebar{display:none}.main{padding:1.5rem 1rem 80px}.pack-layout{grid-template-columns:1fr}.mobile-nav{display:block}}
 @media(max-width:500px){.gtitle{font-size:1.5rem}.frow{grid-template-columns:1fr}}
 </style>
@@ -409,21 +419,24 @@ select.finput{cursor:pointer}
 
 <!-- MODAL: Add Clothing -->
 <div id="m-cloth" class="modal-backdrop hidden">
- <div class="modal modal-sm">
+ <div class="modal" style="max-width:480px">
   <div class="mhead"><div class="mtitle">Add to Closet</div><button class="mclose" onclick="closeM('m-cloth')">×</button></div>
   <div class="msub">Add a clothing item manually</div>
   <label class="flabel">Item name</label><input class="finput" id="c-name" placeholder="e.g. White linen shirt" onkeydown="if(event.key==='Enter')App.saveCloth()">
-  <div class="frow" style="margin-top:1rem">
-   <div><label class="flabel">Category</label>
-    <select class="finput" id="c-type">
-     <option value="tops">Tops</option><option value="bottoms">Bottoms</option><option value="dresses">Dresses</option>
-     <option value="outerwear">Outerwear</option><option value="shoes">Shoes</option><option value="accessories">Accessories</option>
-     <option value="swimwear">Swimwear</option><option value="activewear">Activewear</option>
-     <option value="underwear">Underwear/Socks</option><option value="sleepwear">Sleepwear</option>
-    </select>
-   </div>
-   <div><label class="flabel">Emoji</label><input class="finput" id="c-emo" placeholder="👕" maxlength="4" style="font-size:1.2rem;text-align:center"></div>
+  <label class="flabel" style="margin-top:1rem">Category</label>
+  <select class="finput" id="c-type" onchange="EmojiPicker.onCatChange('c-emo','c-preview','c-picker')">
+   <option value="tops">Tops</option><option value="bottoms">Bottoms</option><option value="dresses">Dresses</option>
+   <option value="outerwear">Outerwear</option><option value="shoes">Shoes</option><option value="accessories">Accessories</option>
+   <option value="swimwear">Swimwear</option><option value="activewear">Activewear</option>
+   <option value="underwear">Underwear/Socks</option><option value="sleepwear">Sleepwear</option>
+  </select>
+  <label class="flabel" style="margin-top:1rem">Icon</label>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+   <div id="c-preview" style="font-size:2rem;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:10px;border:1.5px solid var(--border)">👕</div>
+   <input class="finput" id="c-emo" placeholder="👕" maxlength="4" style="font-size:1.2rem;text-align:center;width:72px" oninput="EmojiPicker.syncPreview('c-emo','c-preview')">
+   <button class="btn-o" onclick="EmojiPicker.toggle('c-picker','c-type','c-emo','c-preview')" style="white-space:nowrap;font-size:13px">📚 Browse</button>
   </div>
+  <div id="c-picker" style="display:none"></div>
   <div class="mactions"><button class="btn-o" onclick="closeM('m-cloth')">Cancel</button><button class="btn-a" onclick="App.saveCloth()">Add Item</button></div>
  </div>
 </div>
@@ -593,13 +606,18 @@ select.finput{cursor:pointer}
 
 <!-- MODAL: Edit Item (replaces sheetEdit prompt) -->
 <div id="m-edititem" class="modal-backdrop hidden">
- <div class="modal edit-item-modal">
+ <div class="modal" style="max-width:480px">
   <div class="mhead"><div class="mtitle">Edit Item</div><button class="mclose" onclick="closeM('m-edititem')">×</button></div>
-  <div class="msub">Rename or change the emoji for this item</div>
+  <div class="msub">Rename or change the icon for this item</div>
   <label class="flabel">Item name</label>
   <input class="finput" id="ei-name" placeholder="e.g. White linen shirt" onkeydown="if(event.key==='Enter')App.saveEditItem()">
-  <label class="flabel" style="margin-top:1rem">Emoji</label>
-  <input class="finput" id="ei-emo" placeholder="👕" maxlength="4" style="font-size:1.2rem;text-align:center">
+  <label class="flabel" style="margin-top:1rem">Icon</label>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+   <div id="ei-preview" style="font-size:2rem;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:10px;border:1.5px solid var(--border)">👕</div>
+   <input class="finput" id="ei-emo" placeholder="👕" maxlength="4" style="font-size:1.2rem;text-align:center;width:72px" oninput="EmojiPicker.syncPreview('ei-emo','ei-preview')">
+   <button class="btn-o" onclick="EmojiPicker.toggle('ei-picker',null,'ei-emo','ei-preview')" style="white-space:nowrap;font-size:13px">📚 Browse</button>
+  </div>
+  <div id="ei-picker" style="display:none"></div>
   <div class="mactions"><button class="btn-o" onclick="closeM('m-edititem')">Cancel</button><button class="btn-a" onclick="App.saveEditItem()">Save Changes</button></div>
  </div>
 </div>
@@ -1039,7 +1057,7 @@ const App={
         📦 Import clothing:
         <button class="btn-o btn-sm" onclick="document.getElementById('m-import').classList.remove('hidden')">Paste order text ✦</button>
         <button class="btn-o btn-sm" onclick="document.getElementById('m-photo').classList.remove('hidden')">Upload photo 📸</button>
-        <button class="btn-o btn-sm" onclick="document.getElementById('m-cloth').classList.remove('hidden')">+ Add manually</button>
+        <button class="btn-o btn-sm" onclick="App.openAddCloth()">+ Add manually</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center">
         <input class="finput" style="max-width:220px;padding:8px 12px;font-size:13px" placeholder="🔍 Search items…" value="${this._closetSearch}" oninput="App._closetSearch=this.value;App.rCloset()">
@@ -1049,10 +1067,19 @@ const App={
       <div class="closet-grid">
         ${cards}
         ${filtered.length===0&&d.closet.length>0?`<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text3);font-size:14px">No items match this filter</div>`:''}
-        ${d.closet.length===0?`<div class="add-tile" onclick="document.getElementById('m-cloth').classList.remove('hidden')"><div style="font-size:1.5rem">+</div><div>Add item</div></div>`:''}
+        ${d.closet.length===0?`<div class="add-tile" onclick="App.openAddCloth()"><div style="font-size:1.5rem">+</div><div>Add item</div></div>`:''}
       </div>`;
   },
   _setClosetFilter(type){this._closetFilter=type;this.rCloset();},
+  openAddCloth(){
+    document.getElementById('c-name').value='';
+    document.getElementById('c-type').value='tops';
+    document.getElementById('c-emo').value='👕';
+    document.getElementById('c-preview').textContent='👕';
+    const picker=document.getElementById('c-picker');if(picker){picker.style.display='none';picker.innerHTML='';}
+    document.getElementById('m-cloth').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('c-name').focus(),100);
+  },
   saveCloth(item){
     const d=this.data();
     if(item){d.closet.push(item);}
@@ -1191,6 +1218,8 @@ Be specific with colors and styles. Only include clearly visible items.`,
     closeSheet();
     document.getElementById('ei-name').value=item.name;
     document.getElementById('ei-emo').value=item.emoji||'👕';
+    document.getElementById('ei-preview').textContent=item.emoji||'👕';
+    const picker=document.getElementById('ei-picker');if(picker){picker.style.display='none';picker.innerHTML='';}
     document.getElementById('m-edititem').classList.remove('hidden');
     setTimeout(()=>document.getElementById('ei-name').focus(),100);
   },
@@ -1943,6 +1972,68 @@ If closet covers everything well, return: [{"icon":"✅","gap":"All covered!","r
     confirmDlg('Remove API key?','This will disable AI features until you add a new key.','🔑','Remove').then(()=>{
       localStorage.removeItem('pw_api');this.toast('Key removed.');this.rSettings();
     }).catch(()=>{});
+  }
+};
+
+// ── EMOJI PICKER ─────────────────────────────────────────────────────
+const EP_LIB={
+  tops:{label:'👕 Tops',subs:{'Women\'s Tops':[{e:'👚',l:'Sweatshirt'},{e:'🩱',l:'Bodysuit'},{e:'🎀',l:'Bow Blouse'},{e:'🥻',l:'Wrap Top'}],'Men\'s Tops':[{e:'👔',l:'Dress Shirt'},{e:'👕',l:'T-Shirt'},{e:'🥼',l:'Linen Shirt'}],'T-Shirts & Tanks':[{e:'🤍',l:'White Tank'},{e:'🖤',l:'Black Tank'},{e:'❤️',l:'Red Tank'},{e:'💙',l:'Blue Tank'},{e:'💚',l:'Green Tank'},{e:'🩶',l:'Grey Tank'},{e:'🩵',l:'Light Blue Tee'},{e:'🟡',l:'Yellow Tee'},{e:'🟠',l:'Orange Tee'},{e:'🟣',l:'Purple Tee'},{e:'⬛',l:'Black Tee'},{e:'⬜',l:'White Tee'}],'Shirts & Blouses':[{e:'👔',l:'Button-Up'},{e:'🎽',l:'Athletic Shirt'}],'Sweaters & Knits':[{e:'🧶',l:'Knit Sweater'},{e:'🟫',l:'Brown Sweater'},{e:'🔵',l:'Blue Sweater'},{e:'🔴',l:'Red Sweater'},{e:'⚪',l:'Cream Sweater'},{e:'🟢',l:'Green Sweater'},{e:'🟨',l:'Yellow Sweater'}]}},
+  bottoms:{label:'👖 Bottoms',subs:{'Jeans':[{e:'👖',l:'Blue Jeans'},{e:'🖤',l:'Black Jeans'},{e:'⬜',l:'White Jeans'},{e:'🩶',l:'Grey Jeans'},{e:'🟤',l:'Khaki Jeans'}],'Shorts':[{e:'🩳',l:'Shorts'},{e:'🔵',l:'Denim Shorts'},{e:'⬛',l:'Black Shorts'},{e:'🟤',l:'Khaki Shorts'},{e:'⬜',l:'White Shorts'},{e:'❤️',l:'Red Shorts'},{e:'🟢',l:'Green Shorts'}],'Skirts':[{e:'👗',l:'Flowy Skirt'},{e:'🩷',l:'Pink Mini Skirt'},{e:'🖤',l:'Black Mini Skirt'},{e:'🟤',l:'Midi Skirt Brown'},{e:'⬜',l:'Midi Skirt White'},{e:'🔵',l:'Denim Skirt'},{e:'🟡',l:'Satin Skirt'},{e:'🌿',l:'Floral Skirt'}],'Trousers':[{e:'🩲',l:'Casual Trousers'},{e:'🟤',l:'Khaki/Chinos'},{e:'⬛',l:'Black Trousers'},{e:'⬜',l:'White Trousers'},{e:'🟢',l:'Olive Trousers'},{e:'🟣',l:'Purple Trousers'},{e:'🩶',l:'Grey Trousers'}],'Leggings':[{e:'🖤',l:'Black Leggings'},{e:'🩶',l:'Grey Leggings'},{e:'🔵',l:'Blue Leggings'},{e:'🟣',l:'Purple Leggings'},{e:'🩷',l:'Pink Leggings'}]}},
+  dresses:{label:'👗 Dresses',subs:{'Casual Dresses':[{e:'👗',l:'Summer Dress'},{e:'🌸',l:'Floral Dress'},{e:'🌿',l:'Boho Dress'},{e:'🩵',l:'Light Blue Dress'},{e:'🩷',l:'Pink Dress'},{e:'🟡',l:'Yellow Dress'},{e:'🟠',l:'Orange Dress'},{e:'🤍',l:'White Dress'},{e:'🖤',l:'Black Dress'},{e:'❤️',l:'Red Dress'},{e:'🟣',l:'Purple Dress'},{e:'🟢',l:'Green Dress'},{e:'🟤',l:'Brown Dress'},{e:'🩶',l:'Grey Dress'}],'Formal':[{e:'💃',l:'Cocktail Dress'},{e:'🌹',l:'Red Evening Dress'},{e:'✨',l:'Sequin/Glam Dress'},{e:'🌙',l:'Midnight Blue Gown'}],'Jumpsuits':[{e:'🩱',l:'Romper'},{e:'🔵',l:'Denim Jumpsuit'},{e:'⬛',l:'Black Jumpsuit'},{e:'🌿',l:'Green Jumpsuit'},{e:'⬜',l:'White Jumpsuit'},{e:'🟡',l:'Yellow Jumpsuit'}]}},
+  outerwear:{label:'🧥 Outerwear',subs:{'Jackets & Blazers':[{e:'🧥',l:'Long Coat'},{e:'🥼',l:'Trench/Duster'},{e:'🔵',l:'Denim Jacket'},{e:'⬛',l:'Black Jacket'},{e:'🟤',l:'Leather Jacket'},{e:'🟢',l:'Utility Jacket'},{e:'🔴',l:'Red Blazer'},{e:'🩶',l:'Grey Blazer'},{e:'⬜',l:'White Blazer'},{e:'🌿',l:'Olive Jacket'}],'Puffers':[{e:'🟤',l:'Brown Puffer'},{e:'⬛',l:'Black Puffer'},{e:'🔵',l:'Navy Puffer'},{e:'❤️',l:'Red Puffer'},{e:'🟢',l:'Green Puffer'},{e:'⬜',l:'White Puffer'},{e:'🩷',l:'Pink Puffer'}],'Rain & Wind':[{e:'🌧️',l:'Raincoat'},{e:'🟡',l:'Yellow Rain Jacket'},{e:'🔵',l:'Blue Windbreaker'},{e:'⬛',l:'Black Windbreaker'}],'Hoodies':[{e:'🩶',l:'Grey Hoodie'},{e:'⬛',l:'Black Hoodie'},{e:'🔵',l:'Blue Zip-Up'},{e:'🩷',l:'Pink Hoodie'},{e:'🟤',l:'Brown Hoodie'},{e:'🟢',l:'Green Hoodie'}]}},
+  shoes:{label:'👟 Shoes',subs:{'Sneakers':[{e:'👟',l:'Sneakers'},{e:'⬜',l:'White Sneakers'},{e:'⬛',l:'Black Sneakers'},{e:'🔴',l:'Red Sneakers'},{e:'🔵',l:'Blue Sneakers'},{e:'🩷',l:'Pink Sneakers'},{e:'🟢',l:'Green Sneakers'},{e:'🟡',l:'Yellow Sneakers'},{e:'👞',l:'Loafers/Casual'}],'Boots':[{e:'🥾',l:'Ankle/Hiking Boots'},{e:'👢',l:'Knee-High Boots'},{e:'⬛',l:'Black Boots'},{e:'🟤',l:'Brown Boots'},{e:'🤍',l:'White Boots'},{e:'❤️',l:'Red Boots'}],'Heels & Formal':[{e:'👠',l:'High Heels'},{e:'👡',l:'Strappy Heels'},{e:'🌹',l:'Red Heels'},{e:'🤍',l:'White Heels'},{e:'⬛',l:'Black Heels'},{e:'🩷',l:'Pink Heels'},{e:'🟡',l:'Gold Heels'},{e:'🩶',l:'Silver Heels'},{e:'👞',l:'Oxford Shoes'}],'Sandals & Summer':[{e:'🩴',l:'Sandals/Flip Flops'},{e:'🌊',l:'Beach Sandals'},{e:'👣',l:'Strappy Sandals'}],'Sport':[{e:'🏃',l:'Running Shoes'},{e:'🎾',l:'Tennis Shoes'},{e:'🎿',l:'Ski Boots'},{e:'🚴',l:'Cycling Shoes'},{e:'🏊',l:'Water Shoes'}]}},
+  accessories:{label:'👜 Accessories',subs:{'Bags':[{e:'👜',l:'Handbag/Tote'},{e:'👝',l:'Clutch/Small Bag'},{e:'🎒',l:'Backpack'},{e:'💼',l:'Briefcase'},{e:'🛍️',l:'Shopping Tote'},{e:'🟤',l:'Brown Leather Bag'},{e:'⬛',l:'Black Bag'},{e:'⬜',l:'White Bag'},{e:'🩷',l:'Pink Bag'}],'Hats':[{e:'🧢',l:'Baseball Cap'},{e:'👒',l:'Sun/Straw Hat'},{e:'🎩',l:'Fedora'},{e:'🧣',l:'Beanie'}],'Scarves & Belts':[{e:'🧣',l:'Scarf'},{e:'🎗️',l:'Belt'},{e:'🌸',l:'Floral Scarf'},{e:'🟤',l:'Leather Belt'},{e:'⬛',l:'Black Belt'}],'Sunglasses':[{e:'🕶️',l:'Sunglasses'},{e:'👓',l:'Glasses'},{e:'😎',l:'Cool Shades'}],'Jewellery':[{e:'💍',l:'Ring'},{e:'📿',l:'Necklace'},{e:'💎',l:'Diamond'},{e:'🌟',l:'Gold Earrings'},{e:'🩶',l:'Silver Bracelet'},{e:'⌚',l:'Watch'}],'Gloves & Winter':[{e:'🧤',l:'Gloves/Mittens'},{e:'🧦',l:'Socks/Tights'},{e:'❄️',l:'Winter Accessories'}]}},
+  swimwear:{label:'🩱 Swimwear',subs:{'Women\'s':[{e:'👙',l:'Bikini'},{e:'🩱',l:'One-Piece'},{e:'🟡',l:'Yellow Bikini'},{e:'🔴',l:'Red Bikini'},{e:'🩵',l:'Blue Bikini'},{e:'🩷',l:'Pink Bikini'},{e:'⬛',l:'Black Swimsuit'},{e:'⬜',l:'White Swimsuit'},{e:'🟢',l:'Green Swimsuit'},{e:'🌸',l:'Floral Bikini'},{e:'🌊',l:'Surf/Rash Guard'}],'Men\'s':[{e:'🩲',l:'Swim Briefs'},{e:'🩳',l:'Board Shorts'},{e:'🔵',l:'Blue Board Shorts'},{e:'🟢',l:'Green Trunks'},{e:'⬛',l:'Black Swim Shorts'},{e:'🌺',l:'Hawaiian Shorts'},{e:'🟡',l:'Yellow Trunks'}],'Cover-Ups':[{e:'🌴',l:'Kaftan/Cover-Up'},{e:'☀️',l:'Linen Beach Shirt'}]}},
+  activewear:{label:'🏃 Activewear',subs:{'Women\'s Gym':[{e:'🩱',l:'Sports Bra'},{e:'🏃',l:'Running Set'},{e:'🧘',l:'Yoga Outfit'},{e:'🩷',l:'Pink Gym Set'},{e:'⬛',l:'Black Gym Set'},{e:'🩵',l:'Blue Gym Set'},{e:'🟣',l:'Purple Gym Set'},{e:'🟢',l:'Green Gym Set'}],'Men\'s Gym':[{e:'🎽',l:'Athletic Shirt'},{e:'🏋️',l:'Gym Tank'},{e:'⬛',l:'Black Gym Shorts'},{e:'🔵',l:'Blue Shorts'},{e:'🩶',l:'Grey Shorts'},{e:'🟢',l:'Green Track Pants'},{e:'⬛',l:'Black Joggers'}],'Sport-Specific':[{e:'🎿',l:'Ski Suit'},{e:'🚴',l:'Cycling Kit'},{e:'🏊',l:'Swim Gear'},{e:'⛷️',l:'Snowboard Outfit'},{e:'🎾',l:'Tennis Outfit'},{e:'⚽',l:'Football Kit'},{e:'🏄',l:'Surf Gear'},{e:'🧗',l:'Climbing Gear'}]}},
+  underwear:{label:'🩲 Underwear',subs:{'Underwear':[{e:'🩲',l:'Briefs/Boxers'},{e:'🩳',l:'Boxer Shorts'},{e:'🤍',l:'White Underwear'},{e:'⬛',l:'Black Underwear'},{e:'🩷',l:'Pink Underwear'},{e:'🩵',l:'Blue Underwear'}],'Socks & Tights':[{e:'🧦',l:'Socks'},{e:'⬜',l:'White Socks'},{e:'⬛',l:'Black Socks'},{e:'🩶',l:'Grey Socks'},{e:'❄️',l:'Thermal Tights'},{e:'🕸️',l:'Sheer Tights'}],'Bras':[{e:'🩱',l:'Bra'},{e:'⬜',l:'White Bra'},{e:'⬛',l:'Black Bra'},{e:'🩷',l:'Pink Bra'},{e:'🟤',l:'Nude Bra'}]}},
+  sleepwear:{label:'😴 Sleepwear',subs:{'Pyjamas':[{e:'🌙',l:'Pyjama Set'},{e:'😴',l:'Nightgown'},{e:'🩷',l:'Pink PJs'},{e:'🔵',l:'Blue PJs'},{e:'🟡',l:'Yellow PJs'},{e:'🩶',l:'Grey PJs'},{e:'⬜',l:'White PJs'},{e:'🌿',l:'Green PJs'}],'Loungewear':[{e:'🧣',l:'Robe/Dressing Gown'},{e:'🧸',l:'Fluffy Loungewear'},{e:'🩶',l:'Grey Lounge Set'},{e:'🟤',l:'Brown Loungewear'},{e:'🩷',l:'Pink Loungewear'}]}}
+};
+const EP_DEFAULTS={tops:'👕',bottoms:'👖',dresses:'👗',outerwear:'🧥',shoes:'👟',accessories:'👜',swimwear:'🩱',activewear:'🎽',underwear:'🩲',sleepwear:'🌙'};
+
+const EmojiPicker={
+  _active:{},
+  syncPreview(inputId,previewId){
+    const v=document.getElementById(inputId)?.value.trim();
+    const el=document.getElementById(previewId);
+    if(el&&v)el.textContent=v;
+  },
+  onCatChange(inputId,previewId,pickerId){
+    const cat=document.getElementById(inputId.replace('c-emo','c-type').replace('ei-emo','ei-type'))?.value||'tops';
+    const em=EP_DEFAULTS[cat]||'👕';
+    const inp=document.getElementById(inputId);if(inp)inp.value=em;
+    const prev=document.getElementById(previewId);if(prev)prev.textContent=em;
+    const picker=document.getElementById(pickerId);
+    if(picker&&picker.style.display!=='none'){this._render(pickerId,cat,inputId,previewId);}
+  },
+  toggle(pickerId,typeId,inputId,previewId){
+    const picker=document.getElementById(pickerId);if(!picker)return;
+    if(picker.style.display!=='none'){picker.style.display='none';return;}
+    const cat=typeId?document.getElementById(typeId)?.value:'tops';
+    this._active[pickerId]={typeId,inputId,previewId,cat:cat||'tops'};
+    picker.style.display='block';
+    this._render(pickerId,cat||'tops',inputId,previewId);
+  },
+  _render(pickerId,activeCat,inputId,previewId){
+    const currentEmoji=document.getElementById(inputId)?.value.trim();
+    const catBtns=Object.entries(EP_LIB).map(([k,v])=>
+      `<button class="ep-cat${k===activeCat?' on':''}" onclick="EmojiPicker._switchCat('${pickerId}','${k}','${inputId}','${previewId}')">${v.label}</button>`
+    ).join('');
+    const catData=EP_LIB[activeCat]||EP_LIB.tops;
+    const subHtml=Object.entries(catData.subs).map(([sName,items])=>
+      `<div class="ep-sub">${sName}</div><div class="ep-grid">${items.map(it=>
+        `<div class="ep-btn${it.e===currentEmoji?' on':''}" title="${it.l}" onclick="EmojiPicker._pick('${pickerId}','${inputId}','${previewId}','${it.e}')">${it.e}</div>`
+      ).join('')}</div>`
+    ).join('');
+    document.getElementById(pickerId).innerHTML=`<div class="ep-wrap"><div class="ep-cats">${catBtns}</div>${subHtml}</div>`;
+  },
+  _switchCat(pickerId,cat,inputId,previewId){
+    if(this._active[pickerId])this._active[pickerId].cat=cat;
+    this._render(pickerId,cat,inputId,previewId);
+  },
+  _pick(pickerId,inputId,previewId,emoji){
+    const inp=document.getElementById(inputId);if(inp)inp.value=emoji;
+    const prev=document.getElementById(previewId);if(prev)prev.textContent=emoji;
+    this._render(pickerId,this._active[pickerId]?.cat||'tops',inputId,previewId);
   }
 };
 
