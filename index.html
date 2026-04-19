@@ -1,229 +1,1952 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PackWise — Travel Smart</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧳</text></svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PackWise</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#FAF7F5;--surface:#FFF;--pink:#E8A0A8;--pink-light:#F5D6DA;--pink-pale:#FDF0F2;--pink-dark:#C4717A;
+  --rose:#D4849C;--mauve:#9E7B8A;--sage:#8FAF9A;--sage-light:#C8DDD0;--gold:#C9A46A;
+  --text:#2D2428;--text2:#7A6068;--text3:#B09AA0;--border:#EDD8DC;--border2:#E5C8CE;
+  --radius:14px;--radius-sm:10px;--shadow-md:0 8px 32px rgba(180,100,120,.14)
+}
+body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6}
+.page{display:none;min-height:100vh}.page.active{display:flex;flex-direction:column}
+/* AUTH */
+#auth-page{background:linear-gradient(145deg,#FDF0F2,#F5EDF8,#EDF2F8);align-items:center;justify-content:center;padding:1.5rem}
+.auth-wrap{width:100%;max-width:400px}
+.auth-brand{text-align:center;margin-bottom:2rem}
+.auth-brand-name{font-size:2.2rem;font-weight:700;letter-spacing:-.03em;margin-bottom:4px}.auth-brand-name span{color:var(--pink-dark)}
+.auth-tagline{font-size:13px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
+.auth-card{background:var(--surface);border-radius:20px;padding:2rem;box-shadow:0 20px 60px rgba(180,100,120,.12)}
+.tab-row{display:flex;background:var(--pink-pale);border-radius:10px;padding:3px;margin-bottom:1.5rem;gap:3px}
+.tab-btn{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--mauve);transition:.2s;font-family:inherit}
+.tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(180,100,120,.12)}
+.flabel{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:6px;margin-top:1rem}
+.finput{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
+.finput:focus{border-color:var(--pink)}.finput::placeholder{color:var(--text3)}
+select.finput{cursor:pointer}
+.btn-p{display:block;width:100%;padding:13px;background:var(--text);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit;margin-top:1.2rem}
+.btn-p:hover{background:var(--pink-dark);transform:translateY(-1px)}
+.btn-a{display:inline-block;padding:11px 22px;background:var(--pink-dark);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-a:hover{background:#b5636b;transform:translateY(-1px)}
+.btn-o{display:inline-block;padding:9px 18px;background:transparent;color:var(--text);border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-o:hover{border-color:var(--pink);background:var(--pink-pale)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.err{color:#c0566b;font-size:13px;margin-top:8px;min-height:18px}
+/* LAYOUT */
+#app-page.active{flex-direction:row}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.5rem 1rem;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-brand{font-size:1.4rem;font-weight:700;letter-spacing:-.02em;padding:.5rem .75rem 1.25rem;border-bottom:1px solid var(--border);margin-bottom:.75rem}.sidebar-brand span{color:var(--pink-dark)}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:transparent;border-radius:var(--radius-sm);color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;transition:.15s;font-family:inherit;text-align:left}
+.nav-btn:hover{background:var(--pink-pale);color:var(--text)}.nav-btn.active{background:var(--pink-pale);color:var(--pink-dark)}
+.nav-btn .ico{font-size:16px;width:22px;text-align:center}
+.sidebar-bottom{margin-top:auto;border-top:1px solid var(--border);padding-top:1rem}
+.user-row{display:flex;align-items:center;gap:9px;padding:8px 10px;color:var(--text2);font-size:13px}
+.avatar{width:28px;height:28px;background:var(--pink-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--pink-dark);flex-shrink:0}
+.main{flex:1;overflow-y:auto;padding:2.5rem 3rem;max-width:960px}
+/* HOME */
+.grow{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap}
+.gtitle{font-size:2rem;font-weight:700;letter-spacing:-.03em}.gtitle span{color:var(--pink-dark)}
+.gsub{font-size:14px;color:var(--text2);margin-top:4px}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:2rem}
+.stat-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.2rem 1.4rem}
+.stat-num{font-size:2rem;font-weight:700;letter-spacing:-.04em;line-height:1}.stat-num.gold{color:var(--gold)}
+.stat-lbl{font-size:13px;color:var(--text2);margin-top:6px}
+.trips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:1rem}
+.trip-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.3rem;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+.trip-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--pink),var(--rose),var(--mauve))}
+.trip-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--border2)}
+.trip-dest{font-size:1.1rem;font-weight:700;margin-bottom:4px}
+.trip-meta{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{background:var(--pink-pale);color:var(--pink-dark);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.dash-tile{background:transparent;border-radius:var(--radius);border:1.5px dashed var(--border2);padding:1.3rem;cursor:pointer;transition:.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text3);font-size:13px;min-height:120px;text-align:center}
+.dash-tile:hover{border-color:var(--pink);color:var(--pink-dark);background:var(--pink-pale)}
+/* SECTION */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.st{font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
+/* CLOSET */
+.closet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.cloth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.9rem;text-align:center;cursor:pointer;transition:.2s;position:relative;user-select:none}
+.cloth-card:hover{border-color:var(--pink);background:var(--pink-pale)}
+.cloth-card.dirty{opacity:.5}.cloth-card.dirty::after{content:'🧺';position:absolute;top:5px;right:6px;font-size:11px}
+.cloth-img{width:60px;height:60px;border-radius:8px;object-fit:cover;margin:0 auto 6px;display:block}
+.cloth-emo{font-size:2rem;margin-bottom:6px;line-height:1;display:block}
+.cloth-name{font-size:11px;font-weight:600;color:var(--text);word-break:break-word}
+.cloth-type{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+.add-tile{background:transparent;border:1.5px dashed var(--border2);border-radius:var(--radius-sm);padding:.9rem;text-align:center;cursor:pointer;transition:.2s;color:var(--text3);font-size:12px;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.add-tile:hover{border-color:var(--pink);color:var(--pink-dark);background:var(--pink-pale)}
+/* LUGGAGE */
+.bag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.bag-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;position:relative;transition:.2s}
+.bag-card:hover{border-color:var(--border2);box-shadow:0 2px 12px rgba(180,100,120,.08)}
+.bag-name{font-size:1rem;font-weight:700;margin-bottom:4px}
+.bag-dims{font-size:12px;color:var(--text3);margin-bottom:10px}
+.bag-vol{font-size:1.4rem;font-weight:700;color:var(--pink-dark)}
+.bag-actions{display:flex;gap:6px;margin-top:10px}
+/* LAUNDRY */
+.laundry-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;min-height:160px}
+.laundry-chips{display:flex;flex-wrap:wrap;gap:8px}
+.laundry-chip{background:var(--pink-pale);border:1px solid var(--border2);border-radius:30px;padding:5px 12px 5px 10px;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer}
+.lx{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0;transition:color .15s}.lx:hover{color:var(--pink-dark)}
+.laundry-empty,.empty-state{text-align:center;padding:2.5rem;color:var(--text3)}
+.empty-state .eico{font-size:2.5rem;margin-bottom:8px}
+/* PACKING */
+.pack-layout{display:grid;grid-template-columns:1fr 280px;gap:1.5rem;align-items:start}
+.day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;margin-bottom:10px}
+.day-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.day-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.day-wx{font-size:11px;color:var(--text3);font-weight:400;background:var(--bg);padding:2px 8px;border-radius:10px}
+.outfit-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--bg)}
+.outfit-row:last-child{border-bottom:none}
+.outfit-thumb{width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0}
+.outfit-emo{font-size:1.1rem;width:32px;text-align:center;flex-shrink:0}
+.outfit-name{flex:1;font-size:13px}
+.outfit-dirty{font-size:10px;color:var(--pink-dark);background:var(--pink-pale);padding:2px 7px;border-radius:10px;flex-shrink:0}
+.ibtn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:3px 5px;border-radius:5px;transition:all .15s;line-height:1}
+.ibtn:hover{background:var(--pink-pale);color:var(--pink-dark)}
+.ibtn.red:hover{background:#fdf0f2;color:#c0566b}
+.side-widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;margin-bottom:12px}
+.sw-title{font-size:13px;font-weight:700;margin-bottom:10px}
+.wx-card{background:linear-gradient(135deg,#2D2428,#4a3040);border-radius:var(--radius);padding:1.2rem;color:#fff;margin-bottom:12px}
+.wx-loc{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.6;margin-bottom:2px}
+.wx-temp{font-size:1.8rem;font-weight:700;letter-spacing:-.04em;margin-bottom:2px}
+.wx-desc{font-size:12px;opacity:.7}
+.cap-bar{height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin:7px 0}
+.cap-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--sage),var(--sage-light));transition:width .4s}
+.cap-fill.warn{background:linear-gradient(90deg,var(--gold),#e8c87a)}.cap-fill.over{background:linear-gradient(90deg,var(--pink-dark),var(--rose))}
+.cap-text{font-size:12px;color:var(--text2)}
+.bag-row{background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.bag-bar-wrap{flex:1}
+.bag-bar-label{font-size:11px;color:var(--text2);margin-bottom:3px;font-weight:500}
+.add-outfit-btn{background:none;border:1.5px dashed var(--border2);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap}
+.add-outfit-btn:hover{border-color:var(--pink);color:var(--pink-dark);background:var(--pink-pale)}
+/* MODALS */
+.modal-backdrop{position:fixed;inset:0;background:rgba(45,36,40,.45);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.modal-backdrop.hidden{display:none}
+.modal{background:var(--surface);border-radius:20px;padding:2rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25)}
+.modal-sm{max-width:400px}
+.mhead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.2rem}
+.mtitle{font-size:1.4rem;font-weight:700;letter-spacing:-.03em}
+.mclose{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3);padding:2px 6px;border-radius:6px;line-height:1}
+.mclose:hover{background:var(--pink-pale);color:var(--text)}
+.msub{font-size:13px;color:var(--text3);margin-bottom:1.4rem}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px}
+.chip{padding:6px 13px;border-radius:20px;font-size:13px;border:1.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:.15s;font-family:inherit}
+.chip:hover{border-color:var(--pink)}.chip.on{background:var(--text);color:#fff;border-color:var(--text)}
+.mactions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.4rem;flex-wrap:wrap}
+/* SHEET */
+.sheet-back{position:fixed;inset:0;background:rgba(45,36,40,.4);backdrop-filter:blur(3px);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.sheet-back.hidden{display:none}
+.sheet{background:var(--surface);border-radius:20px 20px 0 0;padding:1.5rem 1.5rem 2rem;width:100%;max-width:500px;box-shadow:0 -8px 40px rgba(0,0,0,.18);animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-hdr{display:flex;align-items:center;gap:12px;padding-bottom:1rem;border-bottom:1px solid var(--border);margin-bottom:.8rem}
+.sheet-emo{font-size:2.2rem;line-height:1}
+.sheet-img{width:50px;height:50px;border-radius:10px;object-fit:cover}
+.sheet-action{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--radius-sm);cursor:pointer;border:none;background:transparent;width:100%;font-family:inherit;font-size:14px;color:var(--text);transition:background .15s;text-align:left}
+.sheet-action:hover{background:var(--pink-pale)}
+.sico{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sico.pink{background:var(--pink-pale)}.sico.sage{background:#eef5f0}.sico.red{background:#fdf0f2}.sico.gold{background:#fdf7ee}
+.sa-lbl{font-weight:500;font-size:14px}.sa-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.trip-opts{margin-top:4px;display:flex;flex-direction:column;gap:4px;padding-left:42px}
+.trip-opt{padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);border:1px solid var(--border);background:var(--bg);transition:.15s;font-family:inherit;text-align:left;width:100%}
+.trip-opt:hover{border-color:var(--pink);background:var(--pink-pale);color:var(--text)}
+.sheet-cancel{margin-top:.8rem;width:100%;padding:12px;background:var(--bg);color:var(--text2);border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.sheet-cancel:hover{background:var(--border)}
+/* LOADING / MISC */
+.ai-load{display:flex;align-items:center;gap:10px;color:var(--text2);font-size:14px;padding:1.5rem}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--pink-dark);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:#fff;padding:.9rem 1.3rem;border-radius:12px;font-size:14px;max-width:320px;z-index:300;transform:translateY(80px);opacity:0;transition:.3s;box-shadow:0 8px 28px rgba(0,0,0,.25)}
+.toast.show{transform:translateY(0);opacity:1}.toast.warn{border-left:4px solid var(--pink)}
+.tip-box{background:var(--pink-pale);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.9rem 1.1rem;margin-top:1rem;font-size:13px;color:var(--text2)}
+.wx-search{display:flex;gap:8px;margin-bottom:1rem}
+.wx-search input{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--text)}
+.wx-search input:focus{border-color:var(--pink)}
+.photo-upload{border:2px dashed var(--border2);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:.2s;color:var(--text3)}
+.photo-upload:hover{border-color:var(--pink);background:var(--pink-pale);color:var(--pink-dark)}
+
+/* OUTFIT GROUPS */
+.og-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:1rem}
+.og-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;transition:.2s;position:relative}
+.og-card:hover{border-color:var(--border2);box-shadow:0 2px 12px rgba(180,100,120,.08)}
+.og-name{font-size:1rem;font-weight:700;margin-bottom:4px}
+.og-meta{font-size:12px;color:var(--text3);margin-bottom:10px}
+.og-items{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.og-item{background:var(--pink-pale);border-radius:20px;padding:2px 9px;font-size:11px;color:var(--pink-dark)}
+.og-actions{display:flex;gap:6px;flex-wrap:wrap}
+/* WX inline edit */
+.wx-edit-row{display:flex;gap:6px;align-items:center;margin-top:8px}
+.wx-edit-row input{flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.15);color:#fff;outline:none}
+.wx-edit-row input::placeholder{color:rgba(255,255,255,.5)}
+.wx-edit-row input:focus{border-color:rgba(255,255,255,.5)}
+.wx-edit-row button{padding:7px 12px;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.wx-edit-row button:hover{background:rgba(255,255,255,.3)}
+/* TRIP EDIT badge */
+.trip-edit-btn{font-size:12px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:.15s}
+.trip-edit-btn:hover{border-color:var(--pink);color:var(--pink-dark);background:var(--pink-pale)}
+
+
+/* CLOSET PICKER inside modal */
+.closet-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;max-height:260px;overflow-y:auto;padding:2px;margin-top:6px}
+.cp-item{background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .15s;user-select:none;position:relative}
+.cp-item:hover{border-color:var(--pink);background:var(--pink-pale)}
+.cp-item.selected{border-color:var(--pink-dark);background:var(--pink-pale)}
+.cp-item.selected::after{content:'✓';position:absolute;top:3px;right:4px;font-size:10px;color:var(--pink-dark);font-weight:700}
+.cp-item.dirty-item{opacity:.45}
+.cp-item .cp-emo{font-size:1.5rem;line-height:1;margin-bottom:3px}
+.cp-item .cp-img{width:44px;height:44px;border-radius:6px;object-fit:cover;margin:0 auto 3px;display:block}
+.cp-item .cp-name{font-size:10px;color:var(--text);font-weight:500;word-break:break-word;line-height:1.2}
+.cp-item .cp-type{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;margin-top:1px}
+.cp-filter{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.cp-fchip{padding:4px 10px;border-radius:15px;font-size:11px;border:1.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:.12s;font-family:inherit}
+.cp-fchip.active{background:var(--pink-pale);border-color:var(--pink-dark);color:var(--pink-dark);font-weight:600}
+/* OUTFIT BLOCK inside day card — named section with item chips */
+.outfit-block{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.outfit-block:last-child{margin-bottom:0}
+.ob-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.ob-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px}
+.ob-actions{display:flex;gap:4px}
+.ob-items{display:flex;flex-wrap:wrap;gap:5px}
+.ob-chip{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:3px 9px;font-size:11px;color:var(--text);display:flex;align-items:center;gap:4px}
+.ob-chip img{width:16px;height:16px;border-radius:3px;object-fit:cover}
+.ob-empty{font-size:11px;color:var(--text3);font-style:italic}
+
+/* MOBILE BOTTOM NAV */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:50;padding:6px 0 env(safe-area-inset-bottom,6px);box-shadow:0 -4px 20px rgba(45,36,40,.08)}
+.mobile-nav-inner{display:flex;align-items:center;justify-content:space-around}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border:none;background:transparent;color:var(--text3);font-size:10px;cursor:pointer;font-family:inherit;border-radius:10px;transition:.15s;min-width:50px}
+.mob-btn .mob-ico{font-size:20px;line-height:1}
+.mob-btn.active{color:var(--pink-dark)}
+.mob-btn.active .mob-ico{transform:scale(1.1)}
+
+/* PACKING CHECKLIST */
+.check-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bg)}
+.check-row:last-child{border-bottom:none}
+.check-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--border2);cursor:pointer;flex-shrink:0;appearance:none;-webkit-appearance:none;background:var(--surface);transition:.15s;position:relative}
+.check-box:checked{background:var(--pink-dark);border-color:var(--pink-dark)}
+.check-box:checked::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+.check-label{flex:1;font-size:13px;transition:.2s}
+.check-label.done{text-decoration:line-through;color:var(--text3);opacity:.6}
+.checklist-progress{background:var(--bg);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.cp-bar{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.cp-bar-fill{height:100%;background:linear-gradient(90deg,var(--pink-dark),var(--rose));border-radius:4px;transition:width .3s}
+.cp-pct{font-size:12px;font-weight:700;color:var(--pink-dark);min-width:36px;text-align:right}
+.mode-toggle{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:3px;margin-bottom:1rem}
+.mode-btn{flex:1;padding:7px;border:none;background:transparent;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:.15s;font-family:inherit}
+.mode-btn.active{background:var(--surface);color:var(--text);box-shadow:0 2px 6px rgba(45,36,40,.08)}
+
+/* CLOSET FILTER PILLS */
+.closet-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem}
+.cf-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:.15s;font-family:inherit}
+.cf-pill:hover{border-color:var(--pink);color:var(--pink-dark)}
+.cf-pill.active{background:var(--pink-pale);border-color:var(--pink-dark);color:var(--pink-dark)}
+
+/* CONFIRM MODAL */
+.confirm-modal{max-width:360px}
+.confirm-icon{font-size:2.5rem;text-align:center;margin-bottom:.8rem}
+.confirm-title{font-size:1.1rem;font-weight:700;text-align:center;margin-bottom:.4rem}
+.confirm-msg{font-size:13px;color:var(--text2);text-align:center;line-height:1.5;margin-bottom:1.4rem}
+.confirm-actions{display:flex;gap:8px}
+.confirm-actions .btn-p{margin-top:0;flex:1}
+.confirm-actions .btn-o{flex:1}
+
+/* EDIT ITEM MODAL */
+.edit-item-modal{max-width:380px}
+
+
+/* REPEAT BADGE on outfit rows */
+.repeat-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--gold);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:4px;letter-spacing:.02em}
+
+/* WHAT TO WEAR modal */
+.wyw-card{background:linear-gradient(135deg,var(--pink-pale),#f5edf8);border:1.5px solid var(--border2);border-radius:var(--radius);padding:1.8rem;text-align:center;margin-bottom:1rem}
+.wyw-emoji{font-size:3.5rem;margin-bottom:.5rem;line-height:1}
+.wyw-name{font-size:1.3rem;font-weight:700;margin-bottom:.3rem}
+.wyw-type{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem}
+.wyw-items{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+
+/* AI TIPS box */
+.ai-tips-box{background:linear-gradient(135deg,#fdf7ee,#fdf0f2);border:1.5px solid var(--border2);border-radius:var(--radius);padding:1.2rem 1.4rem;margin-bottom:12px}
+.ai-tips-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mauve);margin-bottom:.6rem}
+.ai-tips-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
+.ai-tips-list li{font-size:12px;color:var(--text2);padding-left:16px;position:relative;line-height:1.5}
+.ai-tips-list li::before{content:'✦';position:absolute;left:0;color:var(--gold);font-size:9px;top:3px}
+
+/* AUDIT modal */
+.audit-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.audit-item:last-child{border-bottom:none}
+.audit-icon{font-size:1.4rem;flex-shrink:0;margin-top:1px}
+.audit-text{font-size:13px;color:var(--text)}
+.audit-text strong{display:block;font-weight:600;margin-bottom:2px}
+.audit-text span{color:var(--text2);font-size:12px}
+.audit-ok{text-align:center;padding:1.5rem;color:var(--sage);font-size:14px;font-weight:600}
+
+/* WYW button on home/closet */
+.wyw-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:linear-gradient(135deg,var(--pink-pale),#f0eaf8);color:var(--pink-dark);border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+.wyw-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(180,100,120,.15)}
+
+@media(max-width:860px){.sidebar{display:none}.main{padding:1.5rem 1rem 80px}.pack-layout{grid-template-columns:1fr}.mobile-nav{display:block}}
+@media(max-width:500px){.gtitle{font-size:1.5rem}.frow{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 
-<!-- ═══════════════ AUTH PAGE ═══════════════ -->
+<!-- AUTH -->
 <div id="auth-page" class="page active">
-  <div class="auth-page">
-    <div class="auth-card">
-      <div class="auth-logo">PackWise</div>
-      <div class="auth-tagline">Pack smart. Travel light.</div>
-
-      <div class="tab-row">
-        <button class="tab-btn active" id="auth-tab-signin">Sign In</button>
-        <button class="tab-btn" id="auth-tab-signup">Create Account</button>
-      </div>
-
-      <!-- SIGN IN -->
-      <div id="signin-form">
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-input" type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input class="form-input" type="password" id="si-pass" placeholder="••••••••" autocomplete="current-password">
-        </div>
-        <button class="btn-primary" onclick="App.signIn()">Sign In</button>
-      </div>
-
-      <!-- SIGN UP -->
-      <div id="signup-form" style="display:none;">
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-input" type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Username</label>
-          <input class="form-input" type="text" id="su-username" placeholder="e.g. Sophie" autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input class="form-input" type="password" id="su-pass" placeholder="At least 6 characters" autocomplete="new-password">
-        </div>
-        <button class="btn-primary" onclick="App.signUp()">Create Account</button>
-      </div>
-
-      <div class="error-msg" id="auth-error"></div>
+ <div style="background:linear-gradient(145deg,#FDF0F2,#F5EDF8,#EDF2F8);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem">
+  <div class="auth-wrap">
+   <div class="auth-brand"><div class="auth-brand-name">Pack<span>Wise</span></div><div class="auth-tagline">Pack smart · Travel light</div></div>
+   <div class="auth-card">
+    <div class="tab-row"><button class="tab-btn active" id="tab-in" onclick="switchTab('in')">Sign In</button><button class="tab-btn" id="tab-up" onclick="switchTab('up')">Create Account</button></div>
+    <div id="form-in">
+     <label class="flabel">Email</label><input class="finput" type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
+     <label class="flabel">Password</label><input class="finput" type="password" id="si-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.signIn()">
+     <button class="btn-p" onclick="App.signIn()">Sign In</button>
     </div>
+    <div id="form-up" style="display:none">
+     <label class="flabel">Email</label><input class="finput" type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
+     <label class="flabel">Username</label><input class="finput" type="text" id="su-user" placeholder="e.g. Sophie" autocomplete="username">
+     <label class="flabel">Password</label><input class="finput" type="password" id="su-pass" placeholder="At least 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')App.signUp()">
+     <button class="btn-p" onclick="App.signUp()">Create Account</button>
+    </div>
+    <div class="err" id="auth-err"></div>
+   </div>
   </div>
+ </div>
 </div>
 
-<!-- ═══════════════ APP PAGE ═══════════════ -->
+<!-- APP -->
 <div id="app-page" class="page">
-  <div class="app-layout">
-
-    <!-- SIDEBAR -->
-    <nav class="sidebar">
-      <div class="sidebar-logo">PackWise</div>
-
-      <button class="nav-item" data-view="home" onclick="App.navigate('home')">
-        <span class="nav-icon">🏠</span> Home
-      </button>
-      <button class="nav-item" data-view="closet" onclick="App.navigate('closet')">
-        <span class="nav-icon">👗</span> My Closet
-      </button>
-      <button class="nav-item" data-view="laundry" onclick="App.navigate('laundry')">
-        <span class="nav-icon">🧺</span> Laundry Basket
-      </button>
-
-      <div class="sidebar-bottom">
-        <div class="sidebar-user">
-          <div class="user-avatar" id="nav-avatar">?</div>
-          <span id="nav-username">User</span>
-        </div>
-        <button class="nav-item" onclick="App.signOut()" style="color:var(--taupe);">
-          <span class="nav-icon">↩</span> Sign Out
-        </button>
-      </div>
-    </nav>
-
-    <!-- MAIN -->
-    <main class="main-content" id="main-content">
-      <!-- Rendered by JS -->
-    </main>
-
+ <nav class="sidebar">
+  <div class="sidebar-brand">Pack<span>Wise</span></div>
+  <button class="nav-btn active" data-v="home" onclick="App.go('home')"><span class="ico">🏠</span>Home</button>
+  <button class="nav-btn" data-v="closet" onclick="App.go('closet')"><span class="ico">👗</span>My Closet</button>
+  <button class="nav-btn" data-v="outfits" onclick="App.go('outfits')"><span class="ico">👚</span>Saved Outfits</button>
+  <button class="nav-btn" data-v="luggage" onclick="App.go('luggage')"><span class="ico">🧳</span>My Luggage</button>
+  <button class="nav-btn" data-v="laundry" onclick="App.go('laundry')"><span class="ico">🧺</span>Laundry</button>
+  <button class="nav-btn" data-v="settings" onclick="App.go('settings')"><span class="ico">⚙️</span>Settings</button>
+  <div class="sidebar-bottom">
+   <div class="user-row"><div class="avatar" id="nav-av">?</div><span id="nav-name">User</span></div>
+   <button class="nav-btn" onclick="App.out()"><span class="ico">↩</span>Sign Out</button>
   </div>
+ </nav>
+ <main class="main" id="main"></main>
+
+ <!-- MOBILE BOTTOM NAV -->
+ <nav class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-inner">
+   <button class="mob-btn active" data-v="home" onclick="App.go('home')"><span class="mob-ico">🏠</span>Home</button>
+   <button class="mob-btn" data-v="closet" onclick="App.go('closet')"><span class="mob-ico">👗</span>Closet</button>
+   <button class="mob-btn" data-v="luggage" onclick="App.go('luggage')"><span class="mob-ico">🧳</span>Bags</button>
+   <button class="mob-btn" data-v="laundry" onclick="App.go('laundry')"><span class="mob-ico">🧺</span>Laundry</button>
+   <button class="mob-btn" data-v="settings" onclick="App.go('settings')"><span class="mob-ico">⚙️</span>Settings</button>
+  </div>
+ </nav>
+
+<!-- MODAL: Add Trip -->
+<div id="m-trip" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">Plan a New Trip</div><button class="mclose" onclick="closeM('m-trip')">×</button></div>
+  <div class="msub">Tell us about your adventure</div>
+  <label class="flabel">Destination / City</label>
+  <input class="finput" id="t-dest" placeholder="e.g. Paris, France">
+  <div class="frow" style="margin-top:1rem">
+   <div><label class="flabel">Departure date</label><input class="finput" type="date" id="t-start"></div>
+   <div><label class="flabel">Return date</label><input class="finput" type="date" id="t-end" onchange="calcDays()"></div>
+  </div>
+  <div id="days-preview" style="font-size:12px;color:var(--text3);margin-top:5px"></div>
+  <label class="flabel" style="margin-top:1rem">Activities</label>
+  <div class="chips" id="act-chips">
+   <button class="chip" onclick="this.classList.toggle('on')">🏖️ Beach</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏔️ Hiking</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🎭 Nightlife</button>
+   <button class="chip" onclick="this.classList.toggle('on')">💼 Business</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🍽️ Dining</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏛️ Sightseeing</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏋️ Gym</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏊 Swimming</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🎿 Skiing</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🧘 Wellness</button>
+  </div>
+  <label class="flabel" style="margin-top:1rem">Bags for this trip</label>
+  <div id="trip-bag-select" style="font-size:13px;color:var(--text3);margin-bottom:6px">Loading your saved bags…</div>
+  <div style="font-size:12px;color:var(--text3);margin-top:4px">Or add custom dimensions:</div>
+  <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+   <div style="flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">L (in)</div><input class="finput" type="number" id="s-l" placeholder="22" oninput="calcVol()"></div>
+   <span style="color:var(--text3);margin-top:14px">×</span>
+   <div style="flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">W (in)</div><input class="finput" type="number" id="s-w" placeholder="14" oninput="calcVol()"></div>
+   <span style="color:var(--text3);margin-top:14px">×</span>
+   <div style="flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">H (in)</div><input class="finput" type="number" id="s-h" placeholder="9" oninput="calcVol()"></div>
+   <span style="font-size:12px;color:var(--text3);margin-top:14px;white-space:nowrap" id="vol-out"></span>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-top:4px">Carry-on: 22×14×9 · Checked: 27×21×14</div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-trip')">Cancel</button><button class="btn-a" onclick="App.saveTrip()">Create Trip ✦</button></div>
+ </div>
 </div>
 
-<!-- ═══════════════ MODALS ═══════════════ -->
-
-<!-- ADD TRIP -->
-<div id="add-trip-modal" class="modal-backdrop hidden">
-  <div class="modal">
-    <div class="modal-title">Plan a New Trip</div>
-    <div class="modal-subtitle">Tell us about your adventure</div>
-
-    <div class="form-group">
-      <label class="form-label">Destination</label>
-      <input class="form-input" id="trip-dest" placeholder="e.g. Barcelona, Spain">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Duration (days)</label>
-        <input class="form-input-sm" type="number" id="trip-duration" placeholder="7" min="1" max="60">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Start Date</label>
-        <input class="form-input-sm" type="date" id="trip-start">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Activities</label>
-      <div class="checkbox-group">
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🏖️ Beach</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🏔️ Hiking</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🍽️ Fine dining</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🎭 Nightlife</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🏛️ Sightseeing</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">💼 Business</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🧘 Wellness</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🎿 Skiing</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🚴 Cycling</button>
-        <button class="activity-chip" onclick="App.toggleActivity(this)">🛕 Culture</button>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Suitcase Size (cm) — Length × Width × Height</label>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input class="form-input-sm" type="number" id="suit-l" placeholder="55" style="width:70px;">
-        <span style="color:var(--taupe);">×</span>
-        <input class="form-input-sm" type="number" id="suit-w" placeholder="35" style="width:70px;">
-        <span style="color:var(--taupe);">×</span>
-        <input class="form-input-sm" type="number" id="suit-h" placeholder="20" style="width:70px;">
-        <span style="font-size:12px;color:var(--taupe);">= <span id="vol-display">38.5L</span></span>
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="App.closeModal('add-trip-modal')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="App.saveTrip()">Add Trip</button>
-    </div>
+<!-- MODAL: Add Luggage -->
+<div id="m-bag" class="modal-backdrop hidden">
+ <div class="modal modal-sm">
+  <div class="mhead"><div class="mtitle">Save a Bag</div><button class="mclose" onclick="closeM('m-bag')">×</button></div>
+  <div class="msub">Give your bag a name and save its dimensions for reuse</div>
+  <label class="flabel">Bag name</label>
+  <input class="finput" id="b-name" placeholder="e.g. Carry-on Rimowa, Big Blue Checked">
+  <div class="frow" style="margin-top:1rem">
+   <div><label class="flabel">Length (in)</label><input class="finput" type="number" id="b-l" placeholder="22" oninput="calcBagVol()"></div>
+   <div><label class="flabel">Width (in)</label><input class="finput" type="number" id="b-w" placeholder="14" oninput="calcBagVol()"></div>
   </div>
+  <div class="frow">
+   <div><label class="flabel">Height (in)</label><input class="finput" type="number" id="b-h" placeholder="9" oninput="calcBagVol()"></div>
+   <div><label class="flabel">Volume</label><div style="padding:11px 13px;font-size:14px;color:var(--text3)" id="b-vol">—</div></div>
+  </div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-bag')">Cancel</button><button class="btn-a" onclick="App.saveBag()">Save Bag</button></div>
+ </div>
 </div>
 
-<!-- ADD CLOTHING -->
-<div id="add-clothing-modal" class="modal-backdrop hidden">
-  <div class="modal" style="max-width:420px;">
-    <div class="modal-title">Add to Closet</div>
-    <div class="modal-subtitle">Add a clothing item to your wardrobe</div>
-
-    <div class="form-group">
-      <label class="form-label">Item Name</label>
-      <input class="form-input" id="cloth-name" placeholder="e.g. White linen shirt">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Category</label>
-        <select class="form-input-sm" id="cloth-type" style="width:100%;">
-          <option value="tops">Tops</option>
-          <option value="bottoms">Bottoms</option>
-          <option value="dresses">Dresses / Jumpsuits</option>
-          <option value="outerwear">Outerwear</option>
-          <option value="shoes">Shoes</option>
-          <option value="accessories">Accessories</option>
-          <option value="swimwear">Swimwear</option>
-          <option value="activewear">Activewear</option>
-          <option value="underwear">Underwear / Socks</option>
-          <option value="sleepwear">Sleepwear</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Emoji</label>
-        <input class="form-input-sm" id="cloth-emoji" placeholder="👕" maxlength="4" style="font-size:1.3rem;text-align:center;">
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="App.closeModal('add-clothing-modal')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="App.saveClothing()">Add Item</button>
-    </div>
+<!-- MODAL: Add Clothing -->
+<div id="m-cloth" class="modal-backdrop hidden">
+ <div class="modal modal-sm">
+  <div class="mhead"><div class="mtitle">Add to Closet</div><button class="mclose" onclick="closeM('m-cloth')">×</button></div>
+  <div class="msub">Add a clothing item manually</div>
+  <label class="flabel">Item name</label><input class="finput" id="c-name" placeholder="e.g. White linen shirt" onkeydown="if(event.key==='Enter')App.saveCloth()">
+  <div class="frow" style="margin-top:1rem">
+   <div><label class="flabel">Category</label>
+    <select class="finput" id="c-type">
+     <option value="tops">Tops</option><option value="bottoms">Bottoms</option><option value="dresses">Dresses</option>
+     <option value="outerwear">Outerwear</option><option value="shoes">Shoes</option><option value="accessories">Accessories</option>
+     <option value="swimwear">Swimwear</option><option value="activewear">Activewear</option>
+     <option value="underwear">Underwear/Socks</option><option value="sleepwear">Sleepwear</option>
+    </select>
+   </div>
+   <div><label class="flabel">Emoji</label><input class="finput" id="c-emo" placeholder="👕" maxlength="4" style="font-size:1.2rem;text-align:center"></div>
   </div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-cloth')">Cancel</button><button class="btn-a" onclick="App.saveCloth()">Add Item</button></div>
+ </div>
 </div>
 
-<!-- IMPORT CLOTHING -->
-<div id="import-modal" class="modal-backdrop hidden">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-title">Import Clothing with AI</div>
-    <div class="modal-subtitle">Paste a shopping order confirmation, email, or clothing description — AI will extract the items</div>
-
-    <div class="form-group">
-      <label class="form-label">Paste text here</label>
-      <textarea class="form-input" id="import-text" style="height:160px;resize:vertical;" placeholder="e.g. Your ASOS order: 1x White cotton t-shirt, 1x Black skinny jeans, 1x Striped linen shirt, 1x Blue denim jacket..."></textarea>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="App.closeModal('import-modal')">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:12px 28px;" id="import-btn" onclick="App.importFromText()">Import Items</button>
-    </div>
-  </div>
+<!-- MODAL: Import Text -->
+<div id="m-import" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">Import from Order</div><button class="mclose" onclick="closeM('m-import')">×</button></div>
+  <div class="msub">Paste a shopping order or any clothing description — AI extracts items and suggests an emoji for each one.</div>
+  <textarea class="finput" id="imp-txt" style="height:140px;resize:vertical" placeholder="e.g. Your ASOS order: 1x White cotton t-shirt, 1x Black skinny jeans…"></textarea>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-import')">Cancel</button><button class="btn-a" id="imp-btn" onclick="App.importCloth()">Import with AI ✦</button></div>
+ </div>
 </div>
 
-<!-- NOTIFICATION -->
-<div id="notification" class="notification"></div>
+<!-- MODAL: Import Photo -->
+<div id="m-photo" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">Import from Photo</div><button class="mclose" onclick="closeM('m-photo')">×</button></div>
+  <div class="msub">Upload a photo of yourself or your clothing — AI will identify the items and add them to your closet.</div>
+  <div class="photo-upload" id="photo-drop" onclick="document.getElementById('photo-file').click()">
+   <div style="font-size:2.5rem;margin-bottom:8px">📸</div>
+   <div style="font-weight:600;margin-bottom:4px">Click to upload a photo</div>
+   <div style="font-size:12px">JPEG or PNG · AI will detect clothing items</div>
+  </div>
+  <input type="file" id="photo-file" accept="image/*" style="display:none" onchange="App.handlePhoto(this)">
+  <div id="photo-preview" style="margin-top:12px"></div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-photo')">Cancel</button><button class="btn-a" id="photo-btn" onclick="App.analyzePhoto()" style="display:none">Analyze & Import ✦</button></div>
+ </div>
+</div>
 
-<script src="js/app.js"></script>
+<!-- MODAL: Add Outfit to Day -->
+<div id="m-outfit" class="modal-backdrop hidden">
+ <div class="modal" style="max-width:560px">
+  <div class="mhead"><div class="mtitle">Add Outfit to Day</div><button class="mclose" onclick="closeM('m-outfit')">×</button></div>
+  <div class="msub">Adding to <span id="ao-day" style="color:var(--pink-dark);font-weight:600"></span></div>
+  <label class="flabel">Outfit name</label>
+  <input class="finput" id="ao-name" placeholder="e.g. Beach Day, Dinner Look, Travel Outfit">
+  <label class="flabel" style="margin-top:1rem">Select items from your closet</label>
+  <div id="ao-cp-filter" class="cp-filter"></div>
+  <div id="ao-closet-picker" class="closet-picker"></div>
+  <div style="margin-top:8px;font-size:12px;color:var(--text3)" id="ao-selected-count">0 items selected</div>
+  <label class="flabel" style="margin-top:.8rem">Or type a custom item</label>
+  <div style="display:flex;gap:6px">
+   <input class="finput" id="ao-custom" placeholder="e.g. White sneakers" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();App.aoAddCustom()}">
+   <button class="btn-o btn-sm" onclick="App.aoAddCustom()">+ Add</button>
+  </div>
+  <div id="ao-custom-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-outfit')">Cancel</button><button class="btn-a" onclick="App.saveOutfit()">Add Outfit</button></div>
+ </div>
+</div>
+
+<!-- MODAL: Edit Bag on Trip -->
+<div id="m-editbag" class="modal-backdrop hidden">
+ <div class="modal modal-sm">
+  <div class="mhead"><div class="mtitle">Edit Bag</div><button class="mclose" onclick="closeM('m-editbag')">×</button></div>
+  <div class="msub">Update dimensions for this bag on this trip</div>
+  <label class="flabel">Bag label</label><input class="finput" id="eb-name" placeholder="e.g. Carry-on">
+  <div class="frow" style="margin-top:1rem">
+   <div><label class="flabel">L (in)</label><input class="finput" type="number" id="eb-l" oninput="calcEditVol()"></div>
+   <div><label class="flabel">W (in)</label><input class="finput" type="number" id="eb-w" oninput="calcEditVol()"></div>
+  </div>
+  <div class="frow">
+   <div><label class="flabel">H (in)</label><input class="finput" type="number" id="eb-h" oninput="calcEditVol()"></div>
+   <div><label class="flabel">Volume</label><div style="padding:11px 13px;font-size:14px;color:var(--text3)" id="eb-vol">—</div></div>
+  </div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-editbag')">Cancel</button><button class="btn-a" onclick="App.saveEditBag()">Save Changes</button></div>
+ </div>
+</div>
+
+<!-- SHEET: Item actions -->
+<div id="sheet" class="sheet-back hidden" onclick="if(event.target===this)closeSheet()">
+ <div class="sheet">
+  <div class="sheet-hdr">
+   <div id="s-emo" class="sheet-emo">👕</div>
+   <img id="s-img" class="sheet-img" src="" style="display:none">
+   <div><div style="font-size:1rem;font-weight:700" id="s-name">Item</div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px" id="s-type">Type</div></div>
+  </div>
+  <button class="sheet-action" id="sa-laundry" onclick="App.sheetLaundry()">
+   <div class="sico pink" id="sa-lico">🧺</div><div><div class="sa-lbl" id="sa-llbl">Move to Laundry</div><div class="sa-sub">Won't appear in packing suggestions</div></div>
+  </button>
+  <button class="sheet-action" onclick="App.sheetToggleTrips()">
+   <div class="sico gold">✈️</div><div><div class="sa-lbl">Add to a Trip</div><div class="sa-sub">Add to a specific day's packing list</div></div>
+  </button>
+  <div id="sa-trips" class="trip-opts" style="display:none"></div>
+  <button class="sheet-action" onclick="App.sheetEdit()">
+   <div class="sico sage">✏️</div><div><div class="sa-lbl">Edit Item</div><div class="sa-sub">Rename or change emoji</div></div>
+  </button>
+  <button class="sheet-action" onclick="App.sheetDelete()">
+   <div class="sico red">🗑️</div><div><div class="sa-lbl" style="color:#c0566b">Delete</div><div class="sa-sub">Remove permanently</div></div>
+  </button>
+  <button class="sheet-cancel" onclick="closeSheet()">Cancel</button>
+ </div>
+</div>
+
+
+<!-- MODAL: Save Outfit Group -->
+<div id="m-og" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">Save Outfit Group</div><button class="mclose" onclick="closeM('m-og')">×</button></div>
+  <div class="msub">Give this outfit a name and group it for easy reuse across trips</div>
+  <label class="flabel">Outfit name</label>
+  <input class="finput" id="og-name" placeholder="e.g. Beach Day, Business Casual, Date Night">
+  <label class="flabel">Group / Category</label>
+  <input class="finput" id="og-group" placeholder="e.g. Casual, Formal, Activewear, Vacation" list="og-group-list">
+  <datalist id="og-group-list"><option value="Casual"><option value="Formal"><option value="Activewear"><option value="Vacation"><option value="Beach"><option value="Business"><option value="Evening"></datalist>
+  <label class="flabel">Select items from your closet</label>
+  <div id="og-cp-filter" class="cp-filter"></div>
+  <div id="og-closet-picker" class="closet-picker"></div>
+  <div style="margin-top:6px;font-size:12px;color:var(--text3)" id="og-selected-count">0 items selected</div>
+  <label class="flabel" style="margin-top:.8rem">Or add a custom item</label>
+  <div style="display:flex;gap:6px">
+   <input class="finput" id="og-item-input" placeholder="e.g. White linen shirt" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();App.ogAddCustomItem()}">
+   <button class="btn-o btn-sm" onclick="App.ogAddCustomItem()">+ Add</button>
+  </div>
+  <div id="og-item-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-og')">Cancel</button><button class="btn-a" onclick="App.saveOG()">Save Outfit</button></div>
+ </div>
+</div>
+
+<!-- MODAL: Edit Trip -->
+<div id="m-edittrip" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">Edit Trip</div><button class="mclose" onclick="closeM('m-edittrip')">×</button></div>
+  <div class="msub">Update your trip details, dates, or add more days</div>
+  <label class="flabel">Trip name / destination</label>
+  <input class="finput" id="et-dest" placeholder="e.g. Paris, France">
+  <div class="frow" style="margin-top:1rem">
+   <div><label class="flabel">Departure date</label><input class="finput" type="date" id="et-start" onchange="calcETDays()"></div>
+   <div><label class="flabel">Return date</label><input class="finput" type="date" id="et-end" onchange="calcETDays()"></div>
+  </div>
+  <div id="et-days-preview" style="font-size:12px;color:var(--text3);margin-top:5px"></div>
+  <label class="flabel" style="margin-top:1rem">Or set number of nights directly</label>
+  <input class="finput" type="number" id="et-nights" placeholder="e.g. 7" min="1" max="90">
+  <label class="flabel" style="margin-top:1rem">Activities</label>
+  <div class="chips" id="et-act-chips">
+   <button class="chip" onclick="this.classList.toggle('on')">🏖️ Beach</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏔️ Hiking</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🎭 Nightlife</button>
+   <button class="chip" onclick="this.classList.toggle('on')">💼 Business</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🍽️ Dining</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏛️ Sightseeing</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏋️ Gym</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🏊 Swimming</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🎿 Skiing</button>
+   <button class="chip" onclick="this.classList.toggle('on')">🧘 Wellness</button>
+  </div>
+  <div id="et-warn" style="font-size:12px;color:var(--gold);margin-top:10px;display:none"></div>
+  <div class="mactions">
+   <button class="btn-a" style="background:#c0566b;margin-right:auto" onclick="App.deleteTrip(App._editTripId)">🗑️ Delete Trip</button>
+   <button class="btn-o" onclick="closeM('m-edittrip')">Cancel</button><button class="btn-a" onclick="App.saveEditTrip()">Save Changes</button>
+  </div>
+ </div>
+</div>
+
+<!-- MODAL: Confirm (replaces all confirm() dialogs) -->
+<div id="m-confirm" class="modal-backdrop hidden">
+ <div class="modal confirm-modal">
+  <div class="confirm-icon" id="confirm-icon">⚠️</div>
+  <div class="confirm-title" id="confirm-title">Are you sure?</div>
+  <div class="confirm-msg" id="confirm-msg">This action cannot be undone.</div>
+  <div class="confirm-actions">
+   <button class="btn-o" onclick="closeM('m-confirm');if(window._confirmReject)window._confirmReject()">Cancel</button>
+   <button class="btn-p" id="confirm-ok-btn" onclick="closeM('m-confirm');if(window._confirmResolve)window._confirmResolve()">Confirm</button>
+  </div>
+ </div>
+</div>
+
+<!-- MODAL: Edit Item (replaces sheetEdit prompt) -->
+<div id="m-edititem" class="modal-backdrop hidden">
+ <div class="modal edit-item-modal">
+  <div class="mhead"><div class="mtitle">Edit Item</div><button class="mclose" onclick="closeM('m-edititem')">×</button></div>
+  <div class="msub">Rename or change the emoji for this item</div>
+  <label class="flabel">Item name</label>
+  <input class="finput" id="ei-name" placeholder="e.g. White linen shirt" onkeydown="if(event.key==='Enter')App.saveEditItem()">
+  <label class="flabel" style="margin-top:1rem">Emoji</label>
+  <input class="finput" id="ei-emo" placeholder="👕" maxlength="4" style="font-size:1.2rem;text-align:center">
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-edititem')">Cancel</button><button class="btn-a" onclick="App.saveEditItem()">Save Changes</button></div>
+ </div>
+</div>
+
+<!-- MODAL: Edit Saved Bag (replaces editSavedBag prompts) -->
+<div id="m-editsbag" class="modal-backdrop hidden">
+ <div class="modal modal-sm">
+  <div class="mhead"><div class="mtitle">Edit Bag</div><button class="mclose" onclick="closeM('m-editsbag')">×</button></div>
+  <div class="msub">Update your bag's name and dimensions</div>
+  <label class="flabel">Bag name</label><input class="finput" id="esb-name" placeholder="e.g. Carry-on Rimowa">
+  <div class="frow" style="margin-top:1rem">
+   <div><label class="flabel">Length (in)</label><input class="finput" type="number" id="esb-l" oninput="calcESBVol()"></div>
+   <div><label class="flabel">Width (in)</label><input class="finput" type="number" id="esb-w" oninput="calcESBVol()"></div>
+  </div>
+  <div class="frow">
+   <div><label class="flabel">Height (in)</label><input class="finput" type="number" id="esb-h" oninput="calcESBVol()"></div>
+   <div><label class="flabel">Volume</label><div style="padding:11px 13px;font-size:14px;color:var(--text3)" id="esb-vol">—</div></div>
+  </div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-editsbag')">Cancel</button><button class="btn-a" onclick="App.saveEditSavedBag()">Save Changes</button></div>
+ </div>
+</div>
+
+<!-- MODAL: Add Bag to Trip (replaces addBagToTrip prompts) -->
+<div id="m-addtripbag" class="modal-backdrop hidden">
+ <div class="modal modal-sm">
+  <div class="mhead"><div class="mtitle">Add Bag to Trip</div><button class="mclose" onclick="closeM('m-addtripbag')">×</button></div>
+  <div class="msub">Choose a saved bag or enter custom dimensions</div>
+  <div id="atb-saved" style="margin-bottom:1rem"></div>
+  <label class="flabel">Or enter custom dimensions</label>
+  <label class="flabel" style="margin-top:8px">Bag name</label>
+  <input class="finput" id="atb-name" placeholder="e.g. Tote bag">
+  <div class="frow" style="margin-top:.8rem">
+   <div><label class="flabel">L (in)</label><input class="finput" type="number" id="atb-l" placeholder="22" oninput="calcATBVol()"></div>
+   <div><label class="flabel">W (in)</label><input class="finput" type="number" id="atb-w" placeholder="14" oninput="calcATBVol()"></div>
+  </div>
+  <div class="frow">
+   <div><label class="flabel">H (in)</label><input class="finput" type="number" id="atb-h" placeholder="9" oninput="calcATBVol()"></div>
+   <div><label class="flabel">Volume</label><div style="padding:11px 13px;font-size:14px;color:var(--text3)" id="atb-vol">—</div></div>
+  </div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-addtripbag')">Cancel</button><button class="btn-a" onclick="App.saveAddTripBag()">Add Bag</button></div>
+ </div>
+</div>
+
+<!-- MODAL: Day Picker (replaces sheetPickDay & ogAddToTrip prompts) -->
+<div id="m-daypick" class="modal-backdrop hidden">
+ <div class="modal modal-sm">
+  <div class="mhead"><div class="mtitle">Choose a Day</div><button class="mclose" onclick="closeM('m-daypick')">×</button></div>
+  <div class="msub" id="dp-sub">Pick which day to add this to</div>
+  <div id="dp-trips" style="margin-bottom:1rem"></div>
+  <div id="dp-days" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-daypick')">Cancel</button></div>
+ </div>
+</div>
+
+
+<!-- MODAL: What Should I Wear? -->
+<div id="m-wyw" class="modal-backdrop hidden">
+ <div class="modal modal-sm">
+  <div class="mhead"><div class="mtitle">✨ Today's Outfit</div><button class="mclose" onclick="closeM('m-wyw')">×</button></div>
+  <div class="msub">A random outfit from your clean closet items</div>
+  <div id="wyw-content"></div>
+  <div class="mactions">
+   <button class="btn-o" onclick="closeM('m-wyw')">Done</button>
+   <button class="btn-a" onclick="App.pickOutfit()">🎲 Pick another</button>
+  </div>
+ </div>
+</div>
+
+<!-- MODAL: What Am I Missing? AI Audit -->
+<div id="m-audit" class="modal-backdrop hidden">
+ <div class="modal">
+  <div class="mhead"><div class="mtitle">🔍 Packing Audit</div><button class="mclose" onclick="closeM('m-audit')">×</button></div>
+  <div class="msub" id="audit-sub">Checking your closet against your trip…</div>
+  <div id="audit-content"><div class="ai-load"><div class="spin"></div>AI is auditing your packing…</div></div>
+  <div class="mactions"><button class="btn-o" onclick="closeM('m-audit')">Close</button></div>
+ </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-  // Volume calculator
-  function updateVol() {
-    const l = parseFloat(document.getElementById('suit-l')?.value) || 55;
-    const w = parseFloat(document.getElementById('suit-w')?.value) || 35;
-    const h = parseFloat(document.getElementById('suit-h')?.value) || 20;
-    const el = document.getElementById('vol-display');
-    if (el) el.textContent = (l*w*h/1000).toFixed(1) + 'L';
-  }
-  document.addEventListener('input', e => {
-    if (['suit-l','suit-w','suit-h'].includes(e.target.id)) updateVol();
+// ── HELPERS ──────────────────────────────────────────────
+function switchTab(t){
+  ['in','up'].forEach(x=>{
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+    document.getElementById('form-'+x).style.display=x===t?'block':'none';
   });
+  document.getElementById('auth-err').textContent='';
+}
+function closeM(id){document.getElementById(id).classList.add('hidden')}
+function closeSheet(){document.getElementById('sheet').classList.add('hidden')}
+function calcVol(){
+  const l=+document.getElementById('s-l').value||0,w=+document.getElementById('s-w').value||0,h=+document.getElementById('s-h').value||0;
+  document.getElementById('vol-out').textContent=l&&w&&h?`=${(l*w*h*0.016387).toFixed(1)}L`:'';
+}
+function calcBagVol(){
+  const l=+document.getElementById('b-l').value||0,w=+document.getElementById('b-w').value||0,h=+document.getElementById('b-h').value||0;
+  document.getElementById('b-vol').textContent=l&&w&&h?`${(l*w*h*0.016387).toFixed(1)}L`:'—';
+}
+function calcEditVol(){
+  const l=+document.getElementById('eb-l').value||0,w=+document.getElementById('eb-w').value||0,h=+document.getElementById('eb-h').value||0;
+  document.getElementById('eb-vol').textContent=l&&w&&h?`${(l*w*h*0.016387).toFixed(1)}L`:'—';
+}
+function calcDays(){
+  const s=document.getElementById('t-start').value,e=document.getElementById('t-end').value;
+  const p=document.getElementById('days-preview');
+  if(s&&e){const d=Math.round((new Date(e)-new Date(s))/86400000);p.textContent=d>0?`${d} night${d!==1?'s':''}`:d===0?'Same-day':'⚠️ Return before departure';}
+  else p.textContent='';
+}
+
+function calcETDays(){
+  const s=document.getElementById('et-start').value,e=document.getElementById('et-end').value;
+  const p=document.getElementById('et-days-preview');
+  if(s&&e){const d=Math.round((new Date(e)-new Date(s))/86400000);
+    p.textContent=d>0?d+' night'+(d!==1?'s':''):'Same-day or invalid';
+    document.getElementById('et-nights').value=d>0?d:'';
+  }else p.textContent='';
+}
+
+function calcESBVol(){
+  const l=+document.getElementById('esb-l').value||0,w=+document.getElementById('esb-w').value||0,h=+document.getElementById('esb-h').value||0;
+  document.getElementById('esb-vol').textContent=l&&w&&h?`${(l*w*h*0.016387).toFixed(1)}L`:'—';
+}
+function calcATBVol(){
+  const l=+document.getElementById('atb-l').value||0,w=+document.getElementById('atb-w').value||0,h=+document.getElementById('atb-h').value||0;
+  document.getElementById('atb-vol').textContent=l&&w&&h?`${(l*w*h*0.016387).toFixed(1)}L`:'—';
+}
+// Friendly confirm — returns a promise
+function greet(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
+function confirmDlg(title,msg,icon='⚠️',okLabel='Confirm',okClass=''){
+  return new Promise((res,rej)=>{
+    document.getElementById('confirm-icon').textContent=icon;
+    document.getElementById('confirm-title').textContent=title;
+    document.getElementById('confirm-msg').textContent=msg;
+    const btn=document.getElementById('confirm-ok-btn');
+    btn.textContent=okLabel;
+    btn.className='btn-p'+(okClass?' '+okClass:'');
+    window._confirmResolve=res;window._confirmReject=rej;
+    document.getElementById('m-confirm').classList.remove('hidden');
+  });
+}
+function toB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);})}
+function volL(l,w,h){return+(l*w*h*0.016387).toFixed(1)}
+
+// ── AI ────────────────────────────────────────────────────
+async function callAI(prompt,maxTokens=2500){
+  const ak=localStorage.getItem('pw_api')||'';
+  if(!ak) throw new Error('NO_KEY');
+  let res;
+  try{
+    res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})
+    });
+  }catch(e){throw new Error('Network error — check your connection.');}
+  if(res.status===401) throw new Error('INVALID_KEY');
+  if(!res.ok){let m='HTTP '+res.status;try{const j=await res.json();m=j.error?.message||m;}catch(e){}throw new Error(m);}
+  const json=await res.json();
+  if(json.error) throw new Error(json.error.message||'API error');
+  return json.content[0].text;
+}
+async function callAIVision(prompt,b64,mime='image/jpeg'){
+  const ak=localStorage.getItem('pw_api')||'';
+  if(!ak) throw new Error('NO_KEY');
+  let res;
+  try{
+    res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+        {type:'text',text:prompt}
+      ]}]})
+    });
+  }catch(e){throw new Error('Network error.');}
+  if(res.status===401) throw new Error('INVALID_KEY');
+  if(!res.ok){let m='HTTP '+res.status;try{const j=await res.json();m=j.error?.message||m;}catch(e){}throw new Error(m);}
+  const json=await res.json();
+  if(json.error) throw new Error(json.error.message||'API error');
+  return json.content[0].text;
+}
+function aiErr(e){
+  if(e.message==='NO_KEY') return `<b>Add your Anthropic API key in ⚙️ Settings</b> to enable AI.<br><small>Get one at <a href="https://console.anthropic.com" target="_blank" style="color:var(--pink-dark)">console.anthropic.com</a> — $5 lasts hundreds of requests.</small>`;
+  if(e.message==='INVALID_KEY') return `API key invalid — update it in ⚙️ Settings.`;
+  return `Error: `+e.message;
+}
+
+// ── APP ───────────────────────────────────────────────────
+const App={
+  user:null,view:'home',tripId:null,_packingMode:'plan',
+  _sheetId:null,_outfitTripId:null,_outfitDayIdx:null,_editBagTripId:null,_editBagIdx:null,_photoB64:null,_photoMime:null,
+
+  init(){
+    const s=localStorage.getItem('pw_sess');
+    if(s){this.user=JSON.parse(s);this.boot();}
+    else{document.getElementById('auth-page').classList.add('active');document.getElementById('app-page').classList.remove('active');}
+  },
+  boot(){
+    document.getElementById('auth-page').classList.remove('active');
+    document.getElementById('app-page').classList.add('active');
+    document.getElementById('nav-av').textContent=this.user.name[0].toUpperCase();
+    document.getElementById('nav-name').textContent=this.user.name;
+    this.go('home');
+  },
+  signUp(){
+    const email=document.getElementById('su-email').value.trim(),name=document.getElementById('su-user').value.trim(),pass=document.getElementById('su-pass').value;
+    const err=document.getElementById('auth-err');
+    if(!email||!name||!pass){err.textContent='Please fill all fields.';return;}
+    if(pass.length<6){err.textContent='Password must be 6+ characters.';return;}
+    const users=JSON.parse(localStorage.getItem('pw_users')||'[]');
+    if(users.find(u=>u.email===email)){err.textContent='Email already registered.';return;}
+    const u={id:'u'+Date.now(),email,name,pass};
+    users.push(u);localStorage.setItem('pw_users',JSON.stringify(users));
+    localStorage.setItem(`pw_data_${u.id}`,JSON.stringify({trips:[],closet:[],laundry:[],bags:[]}));
+    this.user={id:u.id,email,name};localStorage.setItem('pw_sess',JSON.stringify(this.user));this.boot();
+  },
+  signIn(){
+    const email=document.getElementById('si-email').value.trim(),pass=document.getElementById('si-pass').value;
+    const err=document.getElementById('auth-err');
+    const users=JSON.parse(localStorage.getItem('pw_users')||'[]');
+    const u=users.find(u=>u.email===email&&u.pass===pass);
+    if(!u){err.textContent='Incorrect email or password.';return;}
+    this.user={id:u.id,email:u.email,name:u.name};localStorage.setItem('pw_sess',JSON.stringify(this.user));this.boot();
+  },
+  out(){localStorage.removeItem('pw_sess');location.reload();},
+  data(){return JSON.parse(localStorage.getItem(`pw_data_${this.user.id}`)||'{"trips":[],"closet":[],"laundry":[],"bags":[]}');},
+  save(d){localStorage.setItem(`pw_data_${this.user.id}`,JSON.stringify(d));},
+  go(v,tid){
+    this.view=v;if(tid)this.tripId=tid;
+    document.querySelectorAll('.nav-btn[data-v]').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+    document.querySelectorAll('.mob-btn[data-v]').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+    ({home:()=>this.rHome(),closet:()=>this.rCloset(),outfits:()=>this.rOutfits(),luggage:()=>this.rLuggage(),laundry:()=>this.rLaundry(),packing:()=>this.rPacking(),settings:()=>this.rSettings()})[v]?.();
+  },
+  toast(msg,type=''){
+    const t=document.getElementById('toast');t.innerHTML=msg;t.className='toast show '+(type||'');
+    setTimeout(()=>t.classList.remove('show'),4000);
+  },
+
+  // ── HOME ──────────────────────────────────────────
+  rHome(){
+    const d=this.data();
+    const stats=`<div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${d.closet.length}</div><div class="stat-lbl">Closet items</div></div>
+      <div class="stat-card"><div class="stat-num gold">${d.laundry.length}</div><div class="stat-lbl">In laundry</div></div>
+      <div class="stat-card"><div class="stat-num">${d.trips.length}</div><div class="stat-lbl">Trips</div></div>
+      <div class="stat-card"><div class="stat-num">${(d.bags||[]).length}</div><div class="stat-lbl">Saved bags</div></div>
+    </div>`;
+    const trips=d.trips.length===0
+      ?`<div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.4rem"><div class="empty-state"><div class="eico">✈️</div><strong style="color:var(--text2)">No trips yet</strong><div>Create a trip to get started</div></div></div>`
+      :`<div class="sh"><div class="st">Your Trips</div><button class="btn-o" onclick="App.openAddTrip()">+ New Trip</button></div>
+       <div class="trips-grid">
+        ${d.trips.map(t=>{
+          const haslist=t.packingList&&t.packingList.length>0;
+          const totalItems=(t.packingList||[]).reduce((a,day)=>a+(day.outfits||[]).length,0);
+          const packedItems=(t.packingList||[]).reduce((a,day)=>a+(day.outfits||[]).filter(o=>o.packed).length,0);
+          const statusBadge=haslist
+            ?`<div class="trip-status ready">✅ ${totalItems} outfits planned${packedItems>0?' · '+packedItems+'/'+totalItems+' packed':''}</div>`
+            :`<div class="trip-status pending">⏳ No packing list yet</div>`;
+          return `<div class="trip-card" onclick="App.go('packing','${t.id}')">
+           <div class="trip-card-actions">
+            <button class="tca-btn" onclick="event.stopPropagation();App.openEditTrip('${t.id}')">✏️</button>
+            <button class="tca-btn del" onclick="event.stopPropagation();App.deleteTrip('${t.id}')">🗑️</button>
+           </div>
+           <div class="trip-dest">${t.destination}</div>
+           <div class="trip-meta">${t.startDate||'TBD'} · ${t.duration||'?'} nights</div>
+           ${statusBadge}
+           <div class="tags">${(t.activities||[]).slice(0,3).map(a=>`<span class="tag">${a}</span>`).join('')}</div>
+          </div>`;
+        }).join('')}
+        <div class="dash-tile" onclick="App.openAddTrip()"><div style="font-size:1.6rem">+</div><div>Add trip</div></div>
+       </div>`;
+    document.getElementById('main').innerHTML=`
+      <div class="grow">
+       <div><div class="gtitle">${greet()}, <span>${this.user.name}</span> ☀️</div>
+       <div class="gsub">${d.trips.length===0?'Add your first trip to get started.':`You have ${d.trips.length} trip${d.trips.length>1?'s':''} planned.`}</div></div>
+       <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;margin-top:4px">
+         <button class="btn-a" onclick="App.openAddTrip()" style="white-space:nowrap">+ New Trip</button>
+         <button class="wyw-btn" onclick="App.pickOutfit()">🎲 What to wear?</button>
+         <button class="export-btn" onclick="App.exportData()">&#x2B07; Export data</button>
+       </div>
+      </div>${stats}${trips}`;
+  },
+
+  exportData(){
+    const d=this.data();
+    const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`packwise-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();URL.revokeObjectURL(url);
+    this.toast('Data exported! 💾');
+  },
+
+  deleteTrip(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    closeM('m-edittrip');
+    confirmDlg('Delete trip?',`Remove "${trip?.destination||'this trip'}" and all its packing data permanently?`,'🗑️','Delete').then(()=>{
+      const d2=this.data();d2.trips=d2.trips.filter(t=>t.id!==tripId);this.save(d2);
+      this.toast('Trip deleted.');
+      this.go('home');
+    }).catch(()=>{});
+  },
+
+  // ── ADD TRIP ──────────────────────────────────────
+  openAddTrip(){
+    const d=this.data();
+    const bags=d.bags||[];
+    const sel=document.getElementById('trip-bag-select');
+    if(bags.length===0){
+      sel.innerHTML=`<span style="color:var(--text3)">No saved bags yet — use custom dimensions below, or <a href="#" onclick="App.go('luggage');closeM('m-trip')" style="color:var(--pink-dark)">save a bag first</a>.</span>`;
+    }else{
+      sel.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px">${bags.map(b=>`<button class="chip" id="bag-sel-${b.id}" onclick="App.selectTripBag('${b.id}')">${b.name} (${b.l}"×${b.w}"×${b.h}")</button>`).join('')}</div>`;
+    }
+    document.getElementById('m-trip').classList.remove('hidden');
+  },
+  selectTripBag(bagId){
+    const d=this.data();
+    const bag=d.bags.find(b=>b.id===bagId);
+    if(!bag)return;
+    document.querySelectorAll('[id^="bag-sel-"]').forEach(b=>b.classList.remove('on'));
+    document.getElementById('bag-sel-'+bagId)?.classList.add('on');
+    document.getElementById('s-l').value=bag.l;
+    document.getElementById('s-w').value=bag.w;
+    document.getElementById('s-h').value=bag.h;
+    calcVol();
+  },
+  saveTrip(){
+    const dest=document.getElementById('t-dest').value.trim();
+    const start=document.getElementById('t-start').value,end=document.getElementById('t-end').value;
+    const l=+document.getElementById('s-l').value||22,w=+document.getElementById('s-w').value||14,h=+document.getElementById('s-h').value||9;
+    const acts=[...document.querySelectorAll('#act-chips .chip.on')].map(c=>c.textContent.trim());
+    if(!dest){this.toast('Please enter a destination.');return;}
+    const dur=start&&end?Math.max(1,Math.round((new Date(end)-new Date(start))/86400000)):7;
+    const d=this.data();
+    const trip={id:'t'+Date.now(),destination:dest,startDate:start||'TBD',endDate:end||'',duration:dur,activities:acts,
+      bags:[{id:'b'+Date.now(),name:'Bag 1',l,w,h}],
+      packingList:[],weather:null,weatherData:null};
+    d.trips.push(trip);this.save(d);
+    closeM('m-trip');
+    document.querySelectorAll('#act-chips .chip.on').forEach(c=>c.classList.remove('on'));
+    ['t-dest','s-l','s-w','s-h'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    this.toast(`Trip to ${dest} added!`);
+    this.go('packing',trip.id);
+    if(d.closet.length>0)this.genList(trip.id);
+  },
+
+  // ── LUGGAGE ───────────────────────────────────────
+  rLuggage(){
+    const d=this.data();
+    const bags=d.bags||[];
+    const cards=bags.map(b=>`
+      <div class="bag-card">
+        <div style="font-size:1.8rem;margin-bottom:8px">🧳</div>
+        <div class="bag-name">${b.name}</div>
+        <div class="bag-dims">${b.l}" × ${b.w}" × ${b.h}"</div>
+        <div class="bag-vol">${volL(b.l,b.w,b.h)}L</div>
+        <div class="bag-actions">
+          <button class="btn-o btn-sm" onclick="App.editSavedBag('${b.id}')">✏️ Edit</button>
+          <button class="btn-o btn-sm" onclick="App.deleteSavedBag('${b.id}')" style="color:#c0566b">🗑️</button>
+        </div>
+      </div>`).join('');
+    document.getElementById('main').innerHTML=`
+      <div class="grow">
+        <div><div class="gtitle"><span>My Luggage</span></div><div class="gsub">Save your bags once, reuse them across trips</div></div>
+        <button class="btn-a" onclick="App.openAddBag()">+ Save a Bag</button>
+      </div>
+      ${bags.length===0?`<div class="empty-state"><div class="eico">🧳</div><div>No saved bags yet.<br>Save your bags here to quickly select them when planning trips.</div></div>`
+        :`<div class="bag-grid">${cards}<div class="dash-tile" onclick="App.openAddBag()"><div style="font-size:1.6rem">+</div><div>Save a bag</div></div></div>`}
+      <div class="tip-box">💡 When you add a trip, you can select any saved bag instead of typing dimensions every time. You can also add multiple bags per trip from the packing view.</div>`;
+  },
+  openAddBag(prefill){
+    if(prefill){document.getElementById('b-name').value=prefill.name||'';document.getElementById('b-l').value=prefill.l||'';document.getElementById('b-w').value=prefill.w||'';document.getElementById('b-h').value=prefill.h||'';}
+    else{['b-name','b-l','b-w','b-h'].forEach(id=>{document.getElementById(id).value='';});}
+    calcBagVol();
+    document.getElementById('m-bag').classList.remove('hidden');
+  },
+  saveBag(){
+    const name=document.getElementById('b-name').value.trim();
+    const l=+document.getElementById('b-l').value,w=+document.getElementById('b-w').value,h=+document.getElementById('b-h').value;
+    if(!name||!l||!w||!h){this.toast('Please fill in name and all dimensions.');return;}
+    const d=this.data();
+    if(!d.bags)d.bags=[];
+    d.bags.push({id:'bag'+Date.now(),name,l,w,h});
+    this.save(d);closeM('m-bag');
+    this.toast(`🧳 ${name} saved!`);
+    if(this.view==='luggage')this.rLuggage();
+  },
+  editSavedBag(bagId){
+    const d=this.data();const bag=d.bags.find(b=>b.id===bagId);if(!bag)return;
+    this._editSavedBagId=bagId;
+    document.getElementById('esb-name').value=bag.name;
+    document.getElementById('esb-l').value=bag.l;
+    document.getElementById('esb-w').value=bag.w;
+    document.getElementById('esb-h').value=bag.h;
+    calcESBVol();
+    document.getElementById('m-editsbag').classList.remove('hidden');
+  },
+  saveEditSavedBag(){
+    const name=document.getElementById('esb-name').value.trim();
+    const l=+document.getElementById('esb-l').value,w=+document.getElementById('esb-w').value,h=+document.getElementById('esb-h').value;
+    if(!name||!l||!w||!h){this.toast('Please fill all fields.');return;}
+    const d=this.data();const bag=d.bags.find(b=>b.id===this._editSavedBagId);
+    if(bag){bag.name=name;bag.l=l;bag.w=w;bag.h=h;}
+    this.save(d);closeM('m-editsbag');this.rLuggage();this.toast('Bag updated!');
+  },
+  deleteSavedBag(bagId){
+    const d=this.data();const bag=d.bags.find(b=>b.id===bagId);
+    confirmDlg('Delete bag?',`Remove "${bag?.name||'this bag'}" from your saved bags?`,'🗑️','Delete').then(()=>{
+      const d2=this.data();d2.bags=d2.bags.filter(b=>b.id!==bagId);this.save(d2);this.rLuggage();this.toast('Bag deleted.');
+    }).catch(()=>{});
+  },
+
+  // ── CLOSET ────────────────────────────────────────
+  _closetFilter:'all',
+  _closetSearch:'',
+  rCloset(){
+    const d=this.data();
+    const filterTypes=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear','underwear','sleepwear'];
+    const filterPills=filterTypes.map(t=>`<button class="cf-pill${this._closetFilter===t?' active':''}" onclick="App._setClosetFilter('${t}')">${t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
+    const filtered=d.closet.filter(c=>{
+      const matchType=this._closetFilter==='all'||c.type===this._closetFilter;
+      const matchSearch=!this._closetSearch||c.name.toLowerCase().includes(this._closetSearch.toLowerCase());
+      return matchType&&matchSearch;
+    });
+    const cards=filtered.map(c=>{
+      const dirty=d.laundry.includes(c.id);
+      const thumb=c.image?`<img class="cloth-img" src="${c.image}" alt="">`:`<span class="cloth-emo">${c.emoji||'👕'}</span>`;
+      return `<div class="cloth-card${dirty?' dirty':''}" onclick="App.openSheet('${c.id}')">${thumb}<div class="cloth-name">${c.name}</div><div class="cloth-type">${c.type}</div></div>`;
+    }).join('');
+    document.getElementById('main').innerHTML=`
+      <div class="grow">
+        <div><div class="gtitle"><span>My Closet</span></div><div class="gsub">${d.closet.length} items — tap any item to manage it</div></div>
+        ${d.closet.length>0?`<button class="wyw-btn" onclick="App.pickOutfit()">🎲 What to wear?</button>`:''}
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text2)">
+        📦 Import clothing:
+        <button class="btn-o btn-sm" onclick="document.getElementById('m-import').classList.remove('hidden')">Paste order text ✦</button>
+        <button class="btn-o btn-sm" onclick="document.getElementById('m-photo').classList.remove('hidden')">Upload photo 📸</button>
+        <button class="btn-o btn-sm" onclick="document.getElementById('m-cloth').classList.remove('hidden')">+ Add manually</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center">
+        <input class="finput" style="max-width:220px;padding:8px 12px;font-size:13px" placeholder="🔍 Search items…" value="${this._closetSearch}" oninput="App._closetSearch=this.value;App.rCloset()">
+        ${d.closet.length>0?`<span style="font-size:12px;color:var(--text3)">${filtered.length}${this._closetFilter!=='all'||this._closetSearch?' shown':''}  of ${d.closet.length}</span>`:''}
+      </div>
+      <div class="closet-filters">${filterPills}</div>
+      <div class="closet-grid">
+        ${cards}
+        ${filtered.length===0&&d.closet.length>0?`<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text3);font-size:14px">No items match this filter</div>`:''}
+        ${d.closet.length===0?`<div class="add-tile" onclick="document.getElementById('m-cloth').classList.remove('hidden')"><div style="font-size:1.5rem">+</div><div>Add item</div></div>`:''}
+      </div>`;
+  },
+  _setClosetFilter(type){this._closetFilter=type;this.rCloset();},
+  saveCloth(item){
+    const d=this.data();
+    if(item){d.closet.push(item);}
+    else{
+      const name=document.getElementById('c-name').value.trim();
+      const type=document.getElementById('c-type').value;
+      const emoji=document.getElementById('c-emo').value.trim()||'👕';
+      if(!name){this.toast('Please enter a name.');return;}
+      d.closet.push({id:'c'+Date.now(),name,type,emoji});
+      closeM('m-cloth');
+      document.getElementById('c-name').value='';document.getElementById('c-emo').value='';
+      this.toast(`${emoji} ${name} added!`);
+    }
+    this.save(d);
+    if(this.view==='closet')this.rCloset();
+  },
+  async importCloth(){
+    const txt=document.getElementById('imp-txt').value.trim();
+    if(!txt){this.toast('Please paste some text.');return;}
+    const btn=document.getElementById('imp-btn');btn.textContent='Importing…';btn.disabled=true;
+    try{
+      const raw=await callAI(`Extract all clothing items from this text. For each item also suggest the best single emoji to represent it visually.
+Return ONLY a JSON array, no markdown: [{"name":"White t-shirt","type":"tops","emoji":"👕"},...]
+Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
+Text: ${txt}`,800);
+      const items=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      const d=this.data();
+      items.forEach(it=>d.closet.push({id:'c'+Date.now()+Math.random().toString(36).slice(2),name:it.name,type:it.type||'tops',emoji:it.emoji||'👕'}));
+      this.save(d);closeM('m-import');
+      document.getElementById('imp-txt').value='';
+      this.toast(`Added ${items.length} items to your closet!`);
+      if(this.view==='closet')this.rCloset();
+    }catch(e){this.toast(e.message==='NO_KEY'?'Add your API key in ⚙️ Settings first!':'Import failed: '+e.message);}
+    btn.textContent='Import with AI ✦';btn.disabled=false;
+  },
+
+  // ── PHOTO IMPORT ──────────────────────────────────
+  handlePhoto(input){
+    const file=input.files[0];if(!file)return;
+    this._photoMime=file.type||'image/jpeg';
+    const reader=new FileReader();
+    reader.onload=e=>{
+      this._photoB64=e.target.result.split(',')[1];
+      document.getElementById('photo-preview').innerHTML=`<img src="${e.target.result}" style="max-width:100%;border-radius:10px;max-height:200px;object-fit:cover">`;
+      document.getElementById('photo-btn').style.display='inline-block';
+    };
+    reader.readAsDataURL(file);
+  },
+  async analyzePhoto(){
+    if(!this._photoB64){this.toast('Please select a photo first.');return;}
+    const btn=document.getElementById('photo-btn');btn.textContent='Analyzing…';btn.disabled=true;
+    try{
+      const raw=await callAIVision(
+        `Look at this photo and identify all visible clothing items being worn or shown.
+For each item, return a JSON array (no markdown): [{"name":"Black blazer","type":"outerwear","emoji":"🧥"},...]
+Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
+Be specific with colors and styles. Only include clearly visible items.`,
+        this._photoB64,this._photoMime
+      );
+      const items=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      const d=this.data();
+      items.forEach(it=>d.closet.push({id:'c'+Date.now()+Math.random().toString(36).slice(2),name:it.name,type:it.type||'tops',emoji:it.emoji||'👕'}));
+      this.save(d);closeM('m-photo');
+      this._photoB64=null;this._photoMime=null;
+      document.getElementById('photo-preview').innerHTML='';
+      btn.style.display='none';
+      this.toast(`Found ${items.length} items in your photo!`);
+      if(this.view==='closet')this.rCloset();
+    }catch(e){this.toast(e.message==='NO_KEY'?'Add your API key in ⚙️ Settings first!':'Photo analysis failed: '+e.message);}
+    btn.textContent='Analyze & Import ✦';btn.disabled=false;
+  },
+
+  // ── ITEM SHEET ────────────────────────────────────
+  openSheet(itemId){
+    const d=this.data();const item=d.closet.find(c=>c.id===itemId);if(!item)return;
+    this._sheetId=itemId;
+    const emoEl=document.getElementById('s-emo'),imgEl=document.getElementById('s-img');
+    if(item.image){emoEl.style.display='none';imgEl.src=item.image;imgEl.style.display='block';}
+    else{emoEl.textContent=item.emoji||'👕';emoEl.style.display='block';imgEl.style.display='none';}
+    document.getElementById('s-name').textContent=item.name;
+    document.getElementById('s-type').textContent=item.type;
+    const dirty=d.laundry.includes(itemId);
+    document.getElementById('sa-llbl').textContent=dirty?'Remove from Laundry':'Move to Laundry';
+    document.getElementById('sa-lico').textContent=dirty?'✅':'🧺';
+    document.getElementById('sa-trips').style.display='none';
+    document.getElementById('sheet').classList.remove('hidden');
+  },
+  sheetLaundry(){
+    const d=this.data();const dirty=d.laundry.includes(this._sheetId);
+    if(dirty)d.laundry=d.laundry.filter(x=>x!==this._sheetId);else d.laundry=[...d.laundry,this._sheetId];
+    this.save(d);closeSheet();
+    this.toast(dirty?'Marked as clean ✅':'Moved to laundry 🧺');
+    if(this.view==='closet')this.rCloset();if(this.view==='laundry')this.rLaundry();
+  },
+  sheetToggleTrips(){
+    const d=this.data();const el=document.getElementById('sa-trips');
+    if(el.style.display!=='none'){el.style.display='none';return;}
+    if(d.trips.length===0){this.toast('No trips yet — add a trip first!');return;}
+    el.innerHTML=d.trips.map(t=>`<button class="trip-opt" onclick="App.sheetPickDay('${t.id}')">${t.destination} · ${t.startDate||'TBD'}</button>`).join('');
+    el.style.display='flex';
+  },
+  sheetPickDay(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);const item=d.closet.find(c=>c.id===this._sheetId);
+    if(!trip||!item)return;
+    closeSheet();
+    if(!trip.packingList||!trip.packingList.length)trip.packingList=Array.from({length:trip.duration||7},(_,i)=>({day:i+1,weather:'',outfits:[]}));
+    // Open day picker modal
+    document.getElementById('dp-sub').textContent=`Pick a day for ${trip.destination}`;
+    document.getElementById('dp-trips').innerHTML='';
+    document.getElementById('dp-days').innerHTML=trip.packingList.map(day=>`
+      <button class="chip" style="padding:8px 14px" onclick="App._dpPickDay('${tripId}',${day.day},'item','${item.id}')">Day ${day.day}${day.weather?'<br><span style="font-size:10px;color:var(--text3)">'+day.weather+'</span>':''}</button>
+    `).join('');
+    document.getElementById('m-daypick').classList.remove('hidden');
+  },
+  _dpPickDay(tripId,dayNum,mode,extraId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    if(!trip)return;
+    closeM('m-daypick');
+    if(mode==='item'){
+      const item=d.closet.find(c=>c.id===extraId);if(!item)return;
+      const dayObj=trip.packingList.find(d=>d.day===dayNum);if(!dayObj)return;
+      dayObj.outfits.push({id:item.id,emoji:item.emoji||'👕',name:item.name,image:item.image||null,occasion:'manual'});
+      this.save(d);this.toast(`${item.emoji||'👕'} Added to Day ${dayNum} of ${trip.destination}!`);
+      if(this.view==='packing'&&this.tripId===tripId)this.rPacking();
+    }else if(mode==='og'){
+      const og=d.outfitGroups?.find(o=>o.id===extraId);if(!og)return;
+      const dayObj=trip.packingList.find(d=>d.day===dayNum);if(!dayObj)return;
+      const items=(og.closetItems||[]).map(ci=>typeof ci==='string'?ci:ci.name);
+      dayObj.outfits.push({id:'og'+Date.now(),emoji:'👗',name:og.name+(items.length?': '+items.join(', '):''),occasion:'saved'});
+      this.save(d);this.toast(`👚 "${og.name}" added to Day ${dayNum} of ${trip.destination}!`);
+      if(this.view==='packing'&&this.tripId===tripId)this.rPacking();
+    }
+  },
+  sheetEdit(){
+    const d=this.data();const item=d.closet.find(c=>c.id===this._sheetId);
+    closeSheet();
+    document.getElementById('ei-name').value=item.name;
+    document.getElementById('ei-emo').value=item.emoji||'👕';
+    document.getElementById('m-edititem').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('ei-name').focus(),100);
+  },
+  saveEditItem(){
+    const newName=document.getElementById('ei-name').value.trim();
+    const newEmo=document.getElementById('ei-emo').value.trim();
+    if(!newName){this.toast('Please enter a name.');return;}
+    const d=this.data();const item=d.closet.find(c=>c.id===this._sheetId);
+    if(item){item.name=newName;if(newEmo)item.emoji=newEmo;}
+    this.save(d);closeM('m-edititem');this.toast('Updated!');
+    if(this.view==='closet')this.rCloset();if(this.view==='laundry')this.rLaundry();
+  },
+  sheetDelete(){
+    const d=this.data();const item=d.closet.find(c=>c.id===this._sheetId);
+    const id=this._sheetId;
+    closeSheet();
+    confirmDlg('Delete item?',`Remove "${item?.name||'this item'}" from your closet permanently?`,'🗑️','Delete').then(()=>{
+      const d2=this.data();
+      d2.closet=d2.closet.filter(c=>c.id!==id);d2.laundry=d2.laundry.filter(x=>x!==id);
+      this.save(d2);this.toast('Item deleted.');
+      if(this.view==='closet')this.rCloset();if(this.view==='laundry')this.rLaundry();
+    }).catch(()=>{});
+  },
+
+  // ── LAUNDRY ───────────────────────────────────────
+  rLaundry(){
+    const d=this.data();const items=d.closet.filter(c=>d.laundry.includes(c.id));
+    const chips=items.length===0
+      ?`<div class="laundry-empty"><div style="font-size:2.5rem;margin-bottom:8px">🧺</div><p>Your laundry basket is empty.</p></div>`
+      :`<div class="laundry-chips">${items.map(c=>`<div class="laundry-chip" onclick="App.openSheet('${c.id}')"><span>${c.emoji||'👕'}</span><span>${c.name}</span><button class="lx" onclick="event.stopPropagation();App.cleanItem('${c.id}')">✓</button></div>`).join('')}</div>`;
+    document.getElementById('main').innerHTML=`
+      <div class="grow">
+        <div><div class="gtitle"><span>Laundry Basket</span></div><div class="gsub">${items.length} item${items.length!==1?'s':''} to wash</div></div>
+        ${items.length>0?`<button class="btn-o" onclick="App.allClean()">✓ All clean</button>`:''}
+      </div>
+      <div class="laundry-box">${chips}</div>
+      <div class="tip-box">💡 Tap any item to manage it. AI will skip dirty items when generating packing lists, or warn you if they are needed.</div>`;
+  },
+  cleanItem(id){const d=this.data();d.laundry=d.laundry.filter(x=>x!==id);this.save(d);this.rLaundry();},
+  allClean(){const d=this.data();d.laundry=[];this.save(d);this.toast('All clean!');this.rLaundry();},
+
+  // ── PACKING ───────────────────────────────────────
+  rPacking(){
+    const d=this.data();const trip=d.trips.find(t=>t.id===this.tripId);
+    const main=document.getElementById('main');
+    if(!trip){main.innerHTML='<div style="padding:2rem;color:var(--text2)">Select a trip from Home.</div>';return;}
+
+    const bags=trip.bags||[{id:'b0',name:'Bag 1',l:22,w:14,h:9}];
+    const bagCapHtml=bags.map((bag,bi)=>{
+      const volIn=bag.l*bag.w*bag.h;
+      const bagOutfitCount=(trip.packingList||[]).reduce((a,day)=>a+(day.outfits||[]).filter(o=>(o.bagIdx||0)===bi).length,0);
+      const usedIn=bagOutfitCount*91;
+      const pct=Math.min(100,Math.round(usedIn/volIn*100));
+      const barCls=pct>90?'over':pct>70?'warn':'';
+      return `<div class="bag-row">
+        <div style="font-size:1.1rem">🧳</div>
+        <div class="bag-bar-wrap">
+          <div class="bag-bar-label">${bag.name} · ${bag.l}"×${bag.w}"×${bag.h}" · ${volL(bag.l,bag.w,bag.h)}L</div>
+          <div class="cap-bar"><div class="cap-fill ${barCls}" style="width:${pct}%"></div></div>
+          <div class="cap-text">${pct}% full · ~${bagOutfitCount} item${bagOutfitCount!==1?'s':''}</div>
+        </div>
+        <button class="ibtn" onclick="App.openEditBag('${trip.id}',${bi})" title="Edit bag">✏️</button>
+        ${bags.length>1?`<button class="ibtn red" onclick="App.removeBag('${trip.id}',${bi})" title="Remove bag">✕</button>`:''}
+      </div>`;
+    }).join('');
+
+    const wxLoc=trip.weatherLocation||trip.destination||'';
+    const wxCard=`<div class="wx-card">
+      <div class="wx-loc">${trip.weather?trip.weather.emoji+' '+trip.weather.temp:'Weather'}</div>
+      <div class="wx-temp" style="font-size:${trip.weather?'1.5rem':'1rem'};${trip.weather?'':'opacity:.6'}">${trip.weather?trip.weather.description:'No weather loaded yet'}</div>
+      ${trip.weather?`<div class="wx-desc" style="margin-top:2px;opacity:.6">${trip.weatherLocation||trip.destination}</div>`:''}
+      <div class="wx-edit-row">
+        <input id="wx-input" placeholder="Update: city or zip…" value="${wxLoc}" onkeydown="if(event.key==='Enter')App.fetchWeather('${trip.id}')">
+        <button onclick="App.fetchWeather('${trip.id}')">Update ↻</button>
+      </div>
+    </div>`;
+
+    const tipsHtml=trip.aiTips?`<div class="ai-tips-box"><div class="ai-tips-title">✦ Packing Tips</div><ul class="ai-tips-list">${trip.aiTips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`:'';    const sidebar=`
+      ${wxCard}
+      ${tipsHtml}
+      <div class="side-widget">
+        <div class="sw-title">🧳 Bags on this trip</div>
+        ${bagCapHtml}
+        <button class="btn-o btn-sm" style="margin-top:8px;width:100%" onclick="App.addBagToTrip('${trip.id}')">+ Add another bag</button>
+      </div>
+      <button class="btn-o" style="width:100%;margin-top:8px;font-size:12px" onclick="App.auditPacking('${trip.id}')">🔍 What am I missing?</button>`;
+
+    const haslist=trip.packingList&&trip.packingList.length>0;
+
+    // Mode toggle (only show when there's a list)
+    let modeToggle='';
+    if(haslist){
+      modeToggle=`<div class="mode-toggle">
+        <button class="mode-btn${this._packingMode==='plan'?' active':''}" onclick="App._packingMode='plan';App.rPacking()">📋 Plan</button>
+        <button class="mode-btn${this._packingMode==='checklist'?' active':''}" onclick="App._packingMode='checklist';App.rPacking()">✅ Pack</button>
+      </div>`;
+    }
+
+    let listHtml='';
+    if(!haslist){
+      listHtml=`<div style="text-align:center;padding:2rem">
+        <div style="font-size:2.5rem;margin-bottom:10px">✨</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:6px">Ready to pack?</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">AI will create a day-by-day outfit plan from your closet, accounting for weather and activities.</div>
+        <button class="btn-a" onclick="App.genList('${trip.id}')">Generate Packing List ✦</button>
+        <div style="margin-top:10px"><button class="btn-o" onclick="App.initBlank('${trip.id}')">Start blank</button></div>
+      </div>`;
+    } else if(this._packingMode==='checklist'){
+      // ── CHECKLIST MODE ──
+      const allOutfits=(trip.packingList||[]).flatMap(day=>(day.outfits||[]).map(o=>o));
+      const totalItems=allOutfits.length;
+      const packedItems=allOutfits.filter(o=>o.packed).length;
+      const pct=totalItems>0?Math.round(packedItems/totalItems*100):0;
+      const progressBar=`<div class="checklist-progress">
+        <div style="font-size:13px;font-weight:600;color:var(--text2)">Packing progress</div>
+        <div class="cp-bar"><div class="cp-bar-fill" id="cp-fill" style="width:${pct}%"></div></div>
+        <div class="cp-pct" id="cp-pct">${pct}%</div>
+        <div style="font-size:12px;color:var(--text3)" id="cp-count">${packedItems}/${totalItems}</div>
+      </div>`;
+      const checkRows=(trip.packingList||[]).map(day=>{
+        const outfits=day.outfits||[];
+        if(!outfits.length) return '';
+        const dayPacked=outfits.filter(o=>o.packed).length;
+        return `<div class="check-day-head">Day ${day.day}${day.weather?' — '+day.weather:''}
+          <span style="font-size:11px;font-weight:400;color:var(--text3)">${dayPacked}/${outfits.length} packed</span>
+        </div>
+        ${outfits.map((o,oi)=>{
+          const closetNames=(o.closetItems||[]).map(c=>c.name).join(', ');
+          const customNames=(o.customItems||[]).join(', ');
+          const detail=[closetNames,customNames].filter(Boolean).join(' + ');
+          const label=`${o.emoji||'👗'} ${o.name}${detail?' ('+detail+')':''}`;
+          return `<div class="check-item-row">
+            <input type="checkbox" class="check-box" ${o.packed?'checked':''} onchange="App.togglePacked('${trip.id}',${day.day},${oi},this.checked)" id="ck-${day.day}-${oi}">
+            <label class="check-label${o.packed?' done':''}" for="ck-${day.day}-${oi}">${label}</label>
+          </div>`;
+        }).join('')}`;
+      }).join('');
+      listHtml=progressBar+checkRows+`<div style="margin-top:1rem">
+        <button class="btn-o btn-sm" onclick="App.resetPacked('${trip.id}')">↺ Reset all checkboxes</button>
+      </div>`;
+    } else {
+      // ── PLAN MODE ──
+      const laundry=d.laundry||[];
+      // Build item usage count map for repeat warnings
+      const itemUsage={};
+      (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
+        (o.closetItems||[]).forEach(ci=>{itemUsage[ci.id]=(itemUsage[ci.id]||0)+1;});
+        if(o.id&&!o.closetItems?.length)itemUsage[o.id]=(itemUsage[o.id]||0)+1;
+      }));
+      listHtml=`<div class="sh"><div class="st">Day-by-Day Outfits</div><button class="btn-o btn-sm" onclick="App.genList('${trip.id}')">↻ Regenerate</button></div>`
+        +(trip.packingList||[]).map((day,di)=>`
+          <div class="day-card">
+            <div class="day-head">
+              <div class="day-title">Day ${day.day}${day.weather?`<span class="day-wx">${day.weather}</span>`:''}</div>
+              <button class="add-outfit-btn" onclick="App.openAddOutfit('${trip.id}',${di})">+ Add outfit</button>
+            </div>
+            ${(day.outfits||[]).map((o,oi)=>{
+              const isDirty=o.closetItems?.some(ci=>laundry.includes(ci.id))||laundry.includes(o.id);
+              const chips=(o.closetItems||[]).map(ci=>{const cnt=itemUsage[ci.id]||0;return `<span class="ob-chip">${ci.image?`<img src="${ci.image}">`:`<span>${ci.emoji||'👕'}</span>`}${ci.name}${cnt>1?`<span class="repeat-badge">×${cnt}</span>`:''}</span>`;}).join('');
+              const customChips=(o.customItems||[]).map(c=>`<span class="ob-chip">✏️ ${c}</span>`).join('');
+              const allChips=chips+customChips;
+              return `<div class="outfit-block">
+                <div class="ob-head">
+                  <div class="ob-title">${o.emoji||'👗'} ${o.name}${isDirty?'<span class="outfit-dirty">🧺 dirty</span>':''}</div>
+                  <div class="ob-actions">
+                    <button class="ibtn" onclick="App.editOutfit('${trip.id}',${di},${oi})" title="Edit">✏️</button>
+                    <button class="ibtn red" onclick="App.delOutfit('${trip.id}',${di},${oi})" title="Remove">✕</button>
+                  </div>
+                </div>
+                <div class="ob-items">${allChips||'<span class="ob-empty">No items added</span>'}</div>
+              </div>`;
+            }).join('')}
+            ${!(day.outfits||[]).length?`<div style="font-size:12px;color:var(--text3);padding:6px 0;font-style:italic">No outfits yet — click "+ Add outfit" above</div>`:''}
+          </div>`).join('');
+    }
+
+    main.innerHTML=`
+      <div class="grow">
+        <div><div class="gtitle"><span>${trip.destination}</span></div>
+        <div class="gsub">${trip.duration} nights · ${trip.startDate||'TBD'}${trip.activities?.length?' · '+trip.activities.join(', '):''}</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="trip-edit-btn" onclick="App.openEditTrip('${trip.id}')">✏️ Edit Trip</button>
+          <button class="btn-o" onclick="App.go('home')">← Back</button>
+        </div>
+      </div>
+      ${modeToggle}
+      <div class="pack-layout">
+        <div id="list-area">${listHtml}</div>
+        <div>${sidebar}</div>
+      </div>`;
+  },
+
+  // ── CHECKLIST ACTIONS ─────────────────────────────
+  togglePacked(tripId,dayNum,outfitIdx,checked){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    const day=trip.packingList.find(d=>d.day===dayNum);
+    if(day&&day.outfits[outfitIdx])day.outfits[outfitIdx].packed=checked;
+    this.save(d);
+    // Update progress live without full re-render
+    const allOutfits=(trip.packingList||[]).flatMap(day=>(day.outfits||[]));
+    const packed=allOutfits.filter(o=>o.packed).length;
+    const total=allOutfits.length;
+    const pct=total>0?Math.round(packed/total*100):0;
+    const fillEl=document.getElementById('cp-fill');
+    const pctEl=document.getElementById('cp-pct');
+    const countEl=document.getElementById('cp-count');
+    if(fillEl)fillEl.style.width=pct+'%';
+    if(pctEl)pctEl.textContent=pct+'%';
+    if(countEl)countEl.textContent=packed+'/'+total;
+    const label=document.querySelector(`label[for="ck-${dayNum}-${outfitIdx}"]`);
+    if(label)label.className='check-label'+(checked?' done':'');
+    if(pct===100&&total>0)setTimeout(()=>this.toast('🎉 All packed! Have a great trip!'),200);
+  },
+  resetPacked(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{delete o.packed;}));
+    this.save(d);this.rPacking();this.toast('Checklist reset ↺');
+  },
+
+  // ── WEATHER ───────────────────────────────────────
+  async fetchWeather(tripId){
+    const el=document.getElementById('wx-input');
+    const loc=(el?.value||'').trim();
+    if(!loc){this.toast('Enter a city or zip code.');return;}
+    const btn=el?.nextElementSibling;if(btn){btn.textContent='…';btn.disabled=true;}
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    try{
+      const raw=await callAI(`What is the typical weather in ${loc} around ${trip.startDate||'this time of year'}? Also give a short day-by-day forecast for ${trip.duration||7} days.
+Respond ONLY with JSON (no markdown):
+{"temp":"72°F / 22°C","description":"Warm and sunny","emoji":"☀️","days":[{"day":1,"forecast":"Sunny, 74°F"},{"day":2,"forecast":"Partly cloudy, 70°F"}]}`,600);
+      const wx=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      trip.weather=wx;trip.weatherLocation=loc;
+      // Update per-day weather if packing list exists
+      if(trip.packingList&&wx.days){
+        wx.days.forEach(wd=>{
+          const day=trip.packingList.find(d=>d.day===wd.day);
+          if(day)day.weather=wd.forecast||day.weather;
+        });
+      }
+      this.save(d);this.rPacking();this.toast('Weather updated for '+loc+' ✓');
+    }catch(e){this.toast('Weather fetch failed: '+e.message);}
+    if(btn){btn.textContent='Update ↻';btn.disabled=false;}
+  },
+
+  // ── BAG MANAGEMENT ON TRIP ────────────────────────
+  addBagToTrip(tripId){
+    this._addTripBagTripId=tripId;
+    const d=this.data();const saved=d.bags||[];
+    const savedHtml=saved.length===0
+      ?'<div style="font-size:13px;color:var(--text3);margin-bottom:6px">No saved bags — use custom below</div>'
+      :`<div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:600">Saved bags:</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${saved.map(b=>`<button class="chip" onclick="App._atbSelectSaved('${b.id}')">${b.name} (${b.l}"×${b.w}"×${b.h}")</button>`).join('')}</div>`;
+    document.getElementById('atb-saved').innerHTML=savedHtml;
+    ['atb-name','atb-l','atb-w','atb-h'].forEach(id=>{document.getElementById(id).value='';});
+    calcATBVol();
+    document.getElementById('m-addtripbag').classList.remove('hidden');
+  },
+  _atbSelectSaved(bagId){
+    const d=this.data();const bag=d.bags.find(b=>b.id===bagId);if(!bag)return;
+    document.getElementById('atb-name').value=bag.name;
+    document.getElementById('atb-l').value=bag.l;
+    document.getElementById('atb-w').value=bag.w;
+    document.getElementById('atb-h').value=bag.h;
+    calcATBVol();
+    document.querySelectorAll('#atb-saved .chip').forEach(c=>c.classList.remove('on'));
+    event.currentTarget.classList.add('on');
+  },
+  saveAddTripBag(){
+    const name=document.getElementById('atb-name').value.trim()||'Bag';
+    const l=+document.getElementById('atb-l').value,w=+document.getElementById('atb-w').value,h=+document.getElementById('atb-h').value;
+    if(!l||!w||!h){this.toast('Please enter bag dimensions.');return;}
+    const d=this.data();const trip=d.trips.find(t=>t.id===this._addTripBagTripId);
+    if(!trip)return;
+    trip.bags.push({id:'b'+Date.now(),name,l,w,h});
+    this.save(d);closeM('m-addtripbag');this.rPacking();this.toast('Bag added!');
+  },
+  openEditBag(tripId,bagIdx){
+    this._editBagTripId=tripId;this._editBagIdx=bagIdx;
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);const bag=trip.bags[bagIdx];
+    document.getElementById('eb-name').value=bag.name;
+    document.getElementById('eb-l').value=bag.l;
+    document.getElementById('eb-w').value=bag.w;
+    document.getElementById('eb-h').value=bag.h;
+    calcEditVol();
+    document.getElementById('m-editbag').classList.remove('hidden');
+  },
+  saveEditBag(){
+    const name=document.getElementById('eb-name').value.trim();
+    const l=+document.getElementById('eb-l').value,w=+document.getElementById('eb-w').value,h=+document.getElementById('eb-h').value;
+    if(!name||!l||!w||!h){this.toast('Please fill all fields.');return;}
+    const d=this.data();const trip=d.trips.find(t=>t.id===this._editBagTripId);
+    trip.bags[this._editBagIdx]={...trip.bags[this._editBagIdx],name,l,w,h};
+    this.save(d);closeM('m-editbag');this.rPacking();this.toast('Bag updated!');
+  },
+  removeBag(tripId,bagIdx){
+    confirmDlg('Remove bag?','Remove this bag from the trip?','🧳','Remove').then(()=>{
+      const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+      trip.bags.splice(bagIdx,1);this.save(d);this.rPacking();
+    }).catch(()=>{});
+  },
+
+  // ── OUTFITS ───────────────────────────────────────
+  initBlank(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    trip.packingList=Array.from({length:trip.duration||7},(_,i)=>({day:i+1,weather:'',outfits:[]}));
+    this.save(d);this.go('packing',tripId);
+  },
+  // Shared closet picker state
+  _pickerSelected:[],
+  _pickerCustom:[],
+  _pickerMode:null, // 'outfit' or 'og'
+  _pickerFilter:'all',
+
+  _buildClosetPicker(pickerId,filterId,countId,mode){
+    const d=this.data();
+    this._pickerMode=mode;
+    this._pickerFilter='all';
+    const types=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear'];
+    const filterEl=document.getElementById(filterId);
+    if(filterEl){
+      filterEl.innerHTML=types.map(t=>`<button class="cp-fchip${t==='all'?' active':''}" onclick="App._filterPicker('${t}','${filterId}','${pickerId}')">${t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
+    }
+    this._renderPicker(pickerId,countId,'all');
+  },
+
+  _filterPicker(type,filterId,pickerId){
+    this._pickerFilter=type;
+    document.querySelectorAll(`#${filterId} .cp-fchip`).forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===type||(type==='all'&&b.textContent==='All')));
+    const countId=pickerId==='ao-closet-picker'?'ao-selected-count':'og-selected-count';
+    this._renderPicker(pickerId,countId,type);
+  },
+
+  _renderPicker(pickerId,countId,filter){
+    const d=this.data();
+    const el=document.getElementById(pickerId);if(!el)return;
+    const items=filter==='all'?d.closet:d.closet.filter(c=>c.type===filter);
+    el.innerHTML=items.length===0
+      ?`<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text3);font-size:13px">${filter==='all'?'No items in your closet yet — add some in My Closet':'No '+filter+' in your closet'}</div>`
+      :items.map(c=>{
+        const sel=this._pickerSelected.some(s=>s.id===c.id);
+        const dirty=d.laundry.includes(c.id);
+        return `<div class="cp-item${sel?' selected':''}${dirty?' dirty-item':''}" onclick="App._togglePicker('${c.id}','${pickerId}','${countId}')" title="${c.name}${dirty?' (in laundry)':''}">
+          ${c.image?`<img class="cp-img" src="${c.image}">`:`<div class="cp-emo">${c.emoji||'👕'}</div>`}
+          <div class="cp-name">${c.name}</div>
+        </div>`;
+      }).join('');
+    this._updatePickerCount(countId);
+  },
+
+  _togglePicker(itemId,pickerId,countId){
+    const d=this.data();const item=d.closet.find(c=>c.id===itemId);if(!item)return;
+    const idx=this._pickerSelected.findIndex(s=>s.id===itemId);
+    if(idx>=0)this._pickerSelected.splice(idx,1);
+    else this._pickerSelected.push({id:item.id,name:item.name,emoji:item.emoji||'👕',image:item.image||null,type:item.type});
+    this._renderPicker(pickerId,countId,this._pickerFilter);
+  },
+
+  _updatePickerCount(countId){
+    const el=document.getElementById(countId);
+    if(el)el.textContent=this._pickerSelected.length+' item'+(this._pickerSelected.length!==1?'s':'')+' selected';
+  },
+
+  aoAddCustom(){
+    const inp=document.getElementById('ao-custom');const val=inp.value.trim();if(!val)return;
+    this._pickerCustom.push(val);inp.value='';
+    const el=document.getElementById('ao-custom-list');
+    if(el)el.innerHTML=this._pickerCustom.map((v,i)=>`<span style="background:var(--pink-pale);border-radius:20px;padding:3px 10px 3px 12px;font-size:11px;color:var(--pink-dark);display:flex;align-items:center;gap:4px">${v}<button onclick="App._pickerCustom.splice(${i},1);App.aoAddCustom.call(App);document.getElementById('ao-custom').value=''" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;line-height:1">×</button></span>`).join('');
+  },
+
+  openAddOutfit(tripId,dayIdx){
+    this._outfitTripId=tripId;this._outfitDayIdx=dayIdx;
+    this._pickerSelected=[];this._pickerCustom=[];
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    document.getElementById('ao-day').textContent='Day '+trip.packingList[dayIdx].day+' — '+trip.destination;
+    document.getElementById('ao-name').value='';
+    document.getElementById('ao-custom-list').innerHTML='';
+    const saveBtn=document.getElementById('save-outfit-btn');
+    if(saveBtn){saveBtn.textContent='Add Outfit';saveBtn.onclick=()=>App.saveOutfit();}
+    this._buildClosetPicker('ao-closet-picker','ao-cp-filter','ao-selected-count','outfit');
+    document.getElementById('m-outfit').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('ao-name').focus(),100);
+  },
+
+  saveOutfit(){
+    const name=document.getElementById('ao-name').value.trim();
+    if(!name){this.toast('Please enter an outfit name.');return;}
+    if(!this._pickerSelected.length&&!this._pickerCustom.length){this.toast('Select at least one item from your closet, or add a custom item.');return;}
+    const emoji=this._pickerSelected[0]?.emoji||'👗';
+    const d=this.data();const trip=d.trips.find(t=>t.id===this._outfitTripId);
+    trip.packingList[this._outfitDayIdx].outfits.push({
+      id:'o'+Date.now(),name,emoji,
+      closetItems:[...this._pickerSelected],
+      customItems:[...this._pickerCustom],
+      occasion:'manual'
+    });
+    this.save(d);closeM('m-outfit');this.toast(emoji+' "'+name+'" added!');this.rPacking();
+  },
+
+  editOutfit(tripId,di,oi){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);const o=trip.packingList[di].outfits[oi];
+    this._outfitTripId=tripId;this._outfitDayIdx=di;this._editOutfitIdx=oi;
+    this._pickerSelected=o.closetItems?[...o.closetItems]:[];
+    this._pickerCustom=o.customItems?[...o.customItems]:[];
+    document.getElementById('ao-day').textContent='Day '+trip.packingList[di].day+' — '+trip.destination+' (editing)';
+    document.getElementById('ao-name').value=o.name;
+    const el=document.getElementById('ao-custom-list');
+    if(el)el.innerHTML=this._pickerCustom.map((v,i)=>`<span style="background:var(--pink-pale);border-radius:20px;padding:3px 10px 3px 12px;font-size:11px;color:var(--pink-dark);display:flex;align-items:center;gap:4px">${v}<button onclick="App._pickerCustom.splice(${i},1)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px">×</button></span>`).join('');
+    this._buildClosetPicker('ao-closet-picker','ao-cp-filter','ao-selected-count','outfit');
+    // Patch save button to update instead of add
+    const saveBtn=document.getElementById('save-outfit-btn');
+    if(saveBtn){saveBtn.textContent='Save Changes';saveBtn.onclick=()=>App._doEditOutfit();}
+    document.getElementById('m-outfit').classList.remove('hidden');
+  },
+  _doEditOutfit(){
+    const name=document.getElementById('ao-name').value.trim();
+    if(!name){this.toast('Please enter an outfit name.');return;}
+    const emoji=this._pickerSelected[0]?.emoji||'👗';
+    const d=this.data();const trip=d.trips.find(t=>t.id===this._outfitTripId);
+    const outfitObj=trip.packingList[this._outfitDayIdx].outfits[this._editOutfitIdx];
+    Object.assign(outfitObj,{name,emoji,closetItems:[...this._pickerSelected],customItems:[...this._pickerCustom]});
+    this.save(d);closeM('m-outfit');this.toast('Outfit updated!');this.rPacking();
+  },
+
+  delOutfit(tripId,di,oi){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    trip.packingList[di].outfits.splice(oi,1);this.save(d);this.rPacking();
+  },
+
+  // ── AI GENERATE ───────────────────────────────────
+  async genList(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    const area=document.getElementById('list-area');
+    if(area)area.innerHTML='<div class="ai-load"><div class="spin"></div>AI is building your packing list…</div>';
+    const avail=d.closet.filter(c=>!d.laundry.includes(c.id));
+    const dirty=d.closet.filter(c=>d.laundry.includes(c.id));
+    const bags=trip.bags||[{l:22,w:14,h:9}];
+    const prompt=`You are a smart packing assistant. Create a day-by-day outfit packing list.
+Trip: ${trip.destination} for ${trip.duration} nights, departing ${trip.startDate||'soon'}
+Activities: ${trip.activities?.length?trip.activities.join(', '):'general travel'}
+Bags: ${bags.map((b,i)=>`Bag ${i+1} (${b.l}"×${b.w}"×${b.h}", ${volL(b.l,b.w,b.h)}L)`).join('; ')}
+Available clothes: ${avail.length?avail.map(c=>`${c.id}:${c.emoji||''}${c.name}(${c.type})`).join(', '):'closet empty — suggest generic items'}
+${dirty.length?`Do NOT suggest: ${dirty.map(c=>c.name).join(', ')}`:''}
+Also estimate weather for ${trip.destination} around ${trip.startDate||'this time of year'}.
+Respond ONLY with valid JSON, no markdown:
+{"weather":{"temp":"72°F","description":"Warm and sunny","emoji":"☀️"},"days":[{"day":1,"weather":"Sunny 72°F","outfits":[{"id":"closet-id-or-generic","emoji":"👕","name":"White shirt + jeans","occasion":"casual"}]}]}
+Exactly ${trip.duration} day entries. Multiple outfits per day where activities vary. Mix and reuse items.`;
+    try{
+      const raw=await callAI(prompt,3000);
+      const result=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      trip.packingList=result.days;
+      if(result.weather&&!trip.weather)trip.weather=result.weather;
+      this.save(d);
+      const dirtyNeeded=dirty.filter(c=>result.days.some(day=>(day.outfits||[]).some(o=>o.name.toLowerCase().includes(c.name.toLowerCase()))));
+      this.go('packing',tripId);
+      if(dirtyNeeded.length)setTimeout(()=>this.toast(`🧺 You may need to wash: ${dirtyNeeded.map(c=>c.name).join(', ')}`,`warn`),700);
+      // Fetch AI tips in background (non-blocking)
+      this._fetchTips(tripId);
+    }catch(e){
+      if(area)area.innerHTML=`<div style="background:var(--pink-pale);border:1px solid var(--border2);border-radius:12px;padding:1.2rem;font-size:14px;color:var(--text2)">${aiErr(e)}</div>`;
+    }
+  },
+
+
+  // ── SAVED OUTFIT GROUPS ──────────────────────────
+  rOutfits(){
+    const d=this.data();const ogs=d.outfitGroups||[];
+    const cards=ogs.map(og=>`
+      <div class="og-card">
+        <div class="og-name">${og.name}</div>
+        <div class="og-meta">${og.group||'Uncategorized'} · ${og.items.length} item${og.items.length!==1?'s':''}</div>
+        <div class="og-items">${og.items.map(it=>`<span class="og-item">${it}</span>`).join('')}</div>
+        <div class="og-actions">
+          <button class="btn-o btn-sm" onclick="App.ogAddToTrip('${og.id}')">+ Add to Trip</button>
+          <button class="btn-o btn-sm" onclick="App.ogEdit('${og.id}')">✏️</button>
+          <button class="btn-o btn-sm" style="color:#c0566b" onclick="App.ogDelete('${og.id}')">🗑️</button>
+        </div>
+      </div>`).join('');
+    // Group by category
+    const groups=[...new Set(ogs.map(o=>o.group||'Uncategorized'))];
+    const grouped=groups.map(g=>{
+      const inGroup=ogs.filter(o=>(o.group||'Uncategorized')===g);
+      return `<div style="margin-bottom:1.5rem">
+        <div class="st" style="margin-bottom:.8rem">${g}</div>
+        <div class="og-grid">${inGroup.map(og=>`
+          <div class="og-card">
+            <div class="og-name">${og.name}</div>
+            <div class="og-meta">${og.items.length} item${og.items.length!==1?'s':''}</div>
+            <div class="og-items">${(og.closetItems||og.items||[]).map(it=>typeof it==='string'?`<span class="og-item">${it}</span>`:`<span class="og-item">${it.emoji||'👕'} ${it.name}</span>`).join('')}</div>
+            <div class="og-actions">
+              <button class="btn-a btn-sm" onclick="App.ogAddToTrip('${og.id}')">+ Add to Trip</button>
+              <button class="btn-o btn-sm" onclick="App.ogEdit('${og.id}')">✏️</button>
+              <button class="btn-o btn-sm" style="color:#c0566b" onclick="App.ogDelete('${og.id}')">🗑️</button>
+            </div>
+          </div>`).join('')}
+          <div class="dash-tile" style="min-height:80px" onclick="App.openOG()"><div style="font-size:1.4rem">+</div><div>New outfit</div></div>
+        </div></div>`;
+    }).join('');
+    document.getElementById('main').innerHTML=`
+      <div class="grow">
+        <div><div class="gtitle"><span>Saved Outfits</span></div><div class="gsub">${ogs.length} saved outfit${ogs.length!==1?'s':''} — reuse them across any trip</div></div>
+        <button class="btn-a" onclick="App.openOG()">+ Save Outfit</button>
+      </div>
+      ${ogs.length===0?`<div class="empty-state"><div class="eico">👚</div><div>No saved outfits yet.<br>Save combinations you love to quickly add them to any trip.</div></div><div style="text-align:center;margin-top:1rem"><button class="btn-a" onclick="App.openOG()">+ Save your first outfit</button></div>`:grouped}
+      <div class="tip-box">💡 Save outfits you wear often — like your go-to travel look or gym kit. Then click "+ Add to Trip" to drop them onto any day of any trip.</div>`;
+  },
+  openOG(prefill){
+    this._ogEditId=null;
+    // Reset picker for og mode
+    this._pickerSelected=[];this._pickerCustom=[];
+    document.getElementById('og-name').value=prefill?.name||'';
+    document.getElementById('og-group').value=prefill?.group||'';
+    document.getElementById('og-item-input').value='';
+    document.getElementById('og-item-list').innerHTML='';
+    // If editing, pre-fill selected items by matching closet items
+    if(prefill?.closetItems){
+      this._pickerSelected=[...prefill.closetItems];
+    } else if(prefill?.items){
+      // Legacy text items — put as custom
+      this._pickerCustom=[...prefill.items];
+    }
+    this._buildClosetPicker('og-closet-picker','og-cp-filter','og-selected-count','og');
+    this._renderOGCustomItems();
+    document.getElementById('m-og').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('og-name').focus(),100);
+  },
+  _renderOGCustomItems(){
+    const el=document.getElementById('og-item-list');
+    if(!el)return;
+    el.innerHTML=this._pickerCustom.map((it,i)=>`<span style="background:var(--pink-pale);border-radius:20px;padding:3px 10px 3px 12px;font-size:11px;color:var(--pink-dark);display:flex;align-items:center;gap:4px">${it}<button onclick="App._pickerCustom.splice(${i},1);App._renderOGCustomItems()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;line-height:1">×</button></span>`).join('');
+  },
+  ogAddCustomItem(){
+    const inp=document.getElementById('og-item-input');
+    const val=inp.value.trim();if(!val)return;
+    if(!this._pickerCustom)this._pickerCustom=[];
+    this._pickerCustom.push(val);inp.value='';this._renderOGCustomItems();
+  },
+  saveOG(){
+    const name=document.getElementById('og-name').value.trim();
+    const group=document.getElementById('og-group').value.trim()||'Uncategorized';
+    if(!name){this.toast('Please enter an outfit name.');return;}
+    if(!this._pickerSelected?.length&&!this._pickerCustom?.length){this.toast('Select at least one item from your closet or add a custom item.');return;}
+    const d=this.data();if(!d.outfitGroups)d.outfitGroups=[];
+    const ogData={name,group,closetItems:[...(this._pickerSelected||[])],items:[...(this._pickerCustom||[])]};
+    if(this._ogEditId){
+      const og=d.outfitGroups.find(o=>o.id===this._ogEditId);
+      if(og){Object.assign(og,ogData);}
+    }else{
+      d.outfitGroups.push({id:'og'+Date.now(),...ogData});
+    }
+    this.save(d);closeM('m-og');
+    this.toast('👚 "'+name+'" saved!');
+    if(this.view==='outfits')this.rOutfits();
+  },
+  ogEdit(ogId){
+    const d=this.data();const og=d.outfitGroups.find(o=>o.id===ogId);if(!og)return;
+    this._ogEditId=ogId;
+    this.openOG(og);
+  },
+  ogDelete(ogId){
+    const d=this.data();const og=d.outfitGroups?.find(o=>o.id===ogId);
+    confirmDlg('Delete outfit?',`Remove "${og?.name||'this outfit'}" from saved outfits?`,'🗑️','Delete').then(()=>{
+      const d2=this.data();d2.outfitGroups=d2.outfitGroups.filter(o=>o.id!==ogId);
+      this.save(d2);this.rOutfits();
+    }).catch(()=>{});
+  },
+  ogAddToTrip(ogId){
+    const d=this.data();const og=d.outfitGroups.find(o=>o.id===ogId);if(!og)return;
+    if(!d.trips.length){this.toast('No trips yet — create a trip first!');return;}
+    this._ogtOgId=ogId;
+    document.getElementById('ogt-name').textContent=og.name;
+    const sel=document.getElementById('ogt-trip-sel');
+    sel.innerHTML=d.trips.map(t=>`<option value="${t.id}">${t.destination} (${t.startDate||'TBD'})</option>`).join('');
+    this._ogtUpdateDays();
+    document.getElementById('m-og-trip').classList.remove('hidden');
+  },
+  _ogtUpdateDays(){
+    const d=this.data();
+    const tripId=document.getElementById('ogt-trip-sel').value;
+    const trip=d.trips.find(t=>t.id===tripId);if(!trip)return;
+    const dur=trip.duration||7;
+    const daySel=document.getElementById('ogt-day-sel');
+    daySel.innerHTML=Array.from({length:dur},(_,i)=>`<option value="${i+1}">Day ${i+1}</option>`).join('');
+  },
+  ogtConfirm(){
+    const d=this.data();const og=d.outfitGroups.find(o=>o.id===this._ogtOgId);if(!og)return;
+    const tripId=document.getElementById('ogt-trip-sel').value;
+    const dayNum=+document.getElementById('ogt-day-sel').value;
+    const trip=d.trips.find(t=>t.id===tripId);if(!trip)return;
+    if(!trip.packingList?.length)trip.packingList=Array.from({length:trip.duration||7},(_,i)=>({day:i+1,weather:'',outfits:[]}));
+    const day=trip.packingList.find(d=>d.day===dayNum);if(!day)return;
+    const items=(og.closetItems||[]).map(ci=>typeof ci==='string'?ci:ci.name);
+    day.outfits.push({id:'og'+Date.now(),emoji:'👗',name:og.name+(items.length?': '+items.join(', '):''),occasion:'saved',closetItems:og.closetItems||[]});
+    this.save(d);closeM('m-og-trip');
+    this.toast(`👚 "${og.name}" added to Day ${dayNum} of ${trip.destination}!`);
+    if(this.view==='packing'&&this.tripId===tripId)this.rPacking();
+  },
+
+  // ── EDIT TRIP ─────────────────────────────────────
+  openEditTrip(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);if(!trip)return;
+    this._editTripId=tripId;
+    document.getElementById('et-dest').value=trip.destination||'';
+    document.getElementById('et-start').value=trip.startDate&&trip.startDate!=='TBD'?trip.startDate:'';
+    document.getElementById('et-end').value=trip.endDate||'';
+    document.getElementById('et-nights').value=trip.duration||'';
+    // Set activity chips
+    const acts=trip.activities||[];
+    document.querySelectorAll('#et-act-chips .chip').forEach(c=>{
+      c.classList.toggle('on',acts.some(a=>c.textContent.includes(a.replace(/^[^\s]+\s/,''))||a.includes(c.textContent.replace(/^[^\s]+\s/,''))));
+    });
+    document.getElementById('et-warn').style.display='none';
+    document.getElementById('m-edittrip').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('et-dest').focus(),100);
+  },
+  saveEditTrip(){
+    const dest=document.getElementById('et-dest').value.trim();
+    const start=document.getElementById('et-start').value;
+    const end=document.getElementById('et-end').value;
+    const nightsField=+document.getElementById('et-nights').value;
+    const acts=[...document.querySelectorAll('#et-act-chips .chip.on')].map(c=>c.textContent.trim());
+    if(!dest){this.toast('Please enter a destination.');return;}
+    // Calculate nights
+    let dur=nightsField;
+    if(start&&end){const calc=Math.round((new Date(end)-new Date(start))/86400000);if(calc>0)dur=calc;}
+    if(!dur||dur<1)dur=1;
+    const d=this.data();const trip=d.trips.find(t=>t.id===this._editTripId);
+    const oldDur=trip.duration||0;
+    trip.destination=dest;trip.startDate=start||'TBD';trip.endDate=end||'';trip.duration=dur;trip.activities=acts;
+    // Adjust packing list length
+    if(trip.packingList?.length){
+      if(dur>oldDur){
+        for(let i=oldDur+1;i<=dur;i++)trip.packingList.push({day:i,weather:'',outfits:[]});
+      }else if(dur<oldDur){
+        const warn=document.getElementById('et-warn');
+        if(trip.packingList.slice(dur).some(d=>(d.outfits||[]).length>0)){
+          warn.textContent=`⚠️ Reducing to ${dur} nights will remove outfits from days ${dur+1}–${oldDur}. Changes saved anyway.`;
+          warn.style.display='block';
+        }
+        trip.packingList=trip.packingList.slice(0,dur);
+      }
+    }
+    this.save(d);closeM('m-edittrip');
+    this.toast(`Trip updated to ${dest}, ${dur} nights ✓`);
+    this.rPacking();
+  },
+
+  // ── SETTINGS ──────────────────────────────────────
+  rSettings(){
+    const ak=localStorage.getItem('pw_api')||'';
+    document.getElementById('main').innerHTML=`
+      <div class="grow"><div><div class="gtitle"><span>Settings</span></div><div class="gsub">Configure PackWise</div></div></div>
+      <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.8rem;max-width:520px">
+        <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem">✨ AI Features</div>
+        <div style="background:var(--pink-pale);border-radius:10px;padding:1rem;margin-bottom:1.2rem;font-size:13px;color:var(--text2);line-height:1.8">
+          PackWise uses <b>Anthropic Claude</b> for AI features.<br>
+          1️⃣ Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--pink-dark);font-weight:600">console.anthropic.com ↗</a><br>
+          2️⃣ Add $5 of credits (lasts hundreds of packing lists — fractions of a cent each)<br>
+          3️⃣ Go to <b>API Keys → Create Key</b> → copy it<br>
+          4️⃣ Paste below and click Save
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="ak-field" value="${ak}" placeholder="sk-ant-..." style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
+          <button class="btn-a" onclick="App.saveKey()">Save</button>
+          ${ak?`<button class="btn-o" onclick="App.clearKey()">Clear</button>`:''}
+        </div>
+        ${ak?`<div style="font-size:12px;color:var(--sage);margin-top:8px">✓ API key saved — AI features enabled</div>`:`<div style="font-size:12px;color:var(--text3);margin-top:8px">No key saved</div>`}
+        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:12px;color:var(--text3)">Your key is stored only in your browser.</div>
+      </div>`;
+    setTimeout(()=>document.getElementById('ak-field')?.focus(),100);
+  },
+  saveKey(){
+    const v=(document.getElementById('ak-field')?.value||'').trim();
+    if(v){localStorage.setItem('pw_api',v);this.toast('API key saved! ✨');this.rSettings();}
+    else this.toast('Please paste your API key.');
+  },
+
+  // ── WHAT TO WEAR ──────────────────────────────────
+  pickOutfit(){
+    const d=this.data();
+    const clean=d.closet.filter(c=>!d.laundry.includes(c.id));
+    if(clean.length===0){this.toast('Your closet is empty or everything is in laundry! 🧺');return;}
+    // Build a random outfit: pick a top + bottom (or dress), optionally shoes/accessories
+    const tops=clean.filter(c=>['tops','dresses','activewear','swimwear'].includes(c.type));
+    const bottoms=clean.filter(c=>c.type==='bottoms');
+    const shoes=clean.filter(c=>c.type==='shoes');
+    const acc=clean.filter(c=>c.type==='accessories');
+    const pick=arr=>arr.length?arr[Math.floor(Math.random()*arr.length)]:null;
+    const base=pick(tops);
+    if(!base){this.toast('Add some tops to your closet first!');return;}
+    const items=[base];
+    if(base.type!=='dresses'){const b=pick(bottoms);if(b)items.push(b);}
+    const s=pick(shoes);if(s)items.push(s);
+    if(Math.random()>.5){const a=pick(acc);if(a)items.push(a);}
+    const html=`<div class="wyw-card">
+      <div class="wyw-items">${items.map(it=>`<span style="font-size:2.5rem">${it.emoji||'👕'}</span>`).join('')}</div>
+      <div class="wyw-name" style="margin-top:.8rem">${items.map(i=>i.name).join(' + ')}</div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);text-align:center">Only showing clean items from your closet</div>`;
+    document.getElementById('wyw-content').innerHTML=html;
+    document.getElementById('m-wyw').classList.remove('hidden');
+  },
+
+  // ── AI PACKING TIPS ───────────────────────────────
+  async _fetchTips(tripId){
+    try{
+      const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+      if(!trip||trip.aiTips)return; // already fetched
+      const raw=await callAI(`Give exactly 3 short, specific, practical packing tips for a trip to ${trip.destination} for ${trip.duration} nights in ${trip.startDate||'upcoming months'}, focusing on activities: ${trip.activities?.join(', ')||'general travel'}.
+Return ONLY a JSON array of 3 strings, no markdown: ["Tip one","Tip two","Tip three"]
+Each tip should be 1 sentence, specific to this destination and activities. Be concrete and opinionated.`,400);
+      const tips=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      const d2=this.data();const trip2=d2.trips.find(t=>t.id===tripId);
+      if(trip2){trip2.aiTips=tips;this.save(d2);}
+      if(this.view==='packing'&&this.tripId===tripId)this.rPacking();
+    }catch(e){/* tips are non-critical, fail silently */}
+  },
+
+  // ── WHAT AM I MISSING? AUDIT ──────────────────────
+  async auditPacking(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    document.getElementById('audit-sub').textContent=`Auditing your closet for ${trip.destination}…`;
+    document.getElementById('audit-content').innerHTML='<div class="ai-load"><div class="spin"></div>AI is auditing your packing…</div>';
+    document.getElementById('m-audit').classList.remove('hidden');
+    const closet=d.closet.filter(c=>!d.laundry.includes(c.id));
+    const prompt=`You are a packing expert. Compare this traveller's closet against their trip needs and identify gaps.
+Trip: ${trip.destination}, ${trip.duration} nights, activities: ${trip.activities?.join(', ')||'general travel'}
+Closet items: ${closet.length?closet.map(c=>`${c.name} (${c.type})`).join(', '):'(empty)'}
+Packing list: ${(trip.packingList||[]).flatMap(d=>(d.outfits||[]).map(o=>o.name)).join(', ')||'(not generated yet)'}
+
+Find 2-5 specific gaps. For each gap, note: what's missing, why it matters for this trip.
+Respond ONLY with JSON array (no markdown):
+[{"icon":"👟","gap":"Running shoes","reason":"You have Gym listed but no activewear footwear in your closet"},...]
+If closet covers everything well, return: [{"icon":"✅","gap":"All covered!","reason":"Your closet looks well-stocked for this trip"}]`;
+    try{
+      const raw=await callAI(prompt,600);
+      const gaps=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      const html=gaps[0]?.gap==='All covered!'
+        ?`<div class="audit-ok">✅ Your closet looks well-stocked for this trip!</div>`
+        :gaps.map(g=>`<div class="audit-item">
+            <div class="audit-icon">${g.icon||'⚠️'}</div>
+            <div class="audit-text"><strong>${g.gap}</strong><span>${g.reason}</span></div>
+          </div>`).join('');
+      document.getElementById('audit-content').innerHTML=html;
+      document.getElementById('audit-sub').textContent=`Found ${gaps[0]?.gap==='All covered!'?'no':gaps.length} gap${gaps.length!==1?'s':''} for ${trip.destination}`;
+    }catch(e){
+      document.getElementById('audit-content').innerHTML=`<div style="color:var(--pink-dark);font-size:14px;padding:1rem">${aiErr(e)}</div>`;
+    }
+  },
+
+  clearKey(){
+    confirmDlg('Remove API key?','This will disable AI features until you add a new key.','🔑','Remove').then(()=>{
+      localStorage.removeItem('pw_api');this.toast('Key removed.');this.rSettings();
+    }).catch(()=>{});
+  }
+};
+
+App.init();
 </script>
 </body>
 </html>
