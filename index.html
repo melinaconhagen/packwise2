@@ -458,7 +458,14 @@ select.finput{cursor:pointer}
    <option value="swimwear">Swimwear</option><option value="activewear">Activewear</option>
    <option value="underwear">Underwear / Socks</option><option value="sleepwear">Sleepwear</option>
   </select>
-  <label class="flabel" style="margin-top:1rem">Icon — pick item then color</label>
+  <label class="flabel" style="margin-top:1rem">Product photo <span style="font-weight:400;text-transform:none;color:var(--text3)">(optional — upload a photo or screenshot of the item)</span></label>
+  <div id="c-img-drop" onclick="document.getElementById('c-img-file').click()" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:.8rem;text-align:center;cursor:pointer;transition:.2s;color:var(--text3);font-size:13px">
+   <span id="c-img-drop-label">📎 Click to upload photo</span>
+  </div>
+  <input type="file" id="c-img-file" accept="image/*" style="display:none" onchange="App.handleItemPhoto(this,'c-img-preview','c-img-drop-label','c-img-b64')">
+  <input type="hidden" id="c-img-b64">
+  <div id="c-img-preview" style="margin-top:6px"></div>
+  <label class="flabel" style="margin-top:1rem">Icon — pick item then color <span style="font-weight:400;text-transform:none;color:var(--text3)">(used if no photo)</span></label>
   <div id="c-emp-picker"></div>
   <input type="hidden" id="c-emo-val">
   <div class="mactions"><button class="btn-o" onclick="closeM('m-cloth')">Cancel</button><button class="btn-a" onclick="App.saveCloth()">Add Item</button></div>
@@ -652,10 +659,17 @@ select.finput{cursor:pointer}
 <div id="m-edititem" class="modal-backdrop hidden">
  <div class="modal" style="max-width:560px">
   <div class="mhead"><div class="mtitle">Edit Item</div><button class="mclose" onclick="closeM('m-edititem')">×</button></div>
-  <div class="msub">Rename or change the icon for this item</div>
+  <div class="msub">Rename, change the icon, or add a product photo</div>
   <label class="flabel">Item name</label>
   <input class="finput" id="ei-name" placeholder="e.g. White linen shirt" onkeydown="if(event.key==='Enter')App.saveEditItem()">
-  <label class="flabel" style="margin-top:1rem">Icon — pick item then color</label>
+  <label class="flabel" style="margin-top:1rem">Product photo <span style="font-weight:400;text-transform:none;color:var(--text3)">(optional — upload a photo or screenshot of the item)</span></label>
+  <div id="ei-img-drop" onclick="document.getElementById('ei-img-file').click()" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:.8rem;text-align:center;cursor:pointer;transition:.2s;color:var(--text3);font-size:13px">
+   <span id="ei-img-drop-label">📎 Click to upload photo</span>
+  </div>
+  <input type="file" id="ei-img-file" accept="image/*" style="display:none" onchange="App.handleItemPhoto(this,'ei-img-preview','ei-img-drop-label','ei-img-b64')">
+  <input type="hidden" id="ei-img-b64">
+  <div id="ei-img-preview" style="margin-top:6px"></div>
+  <label class="flabel" style="margin-top:1rem">Icon — pick item then color <span style="font-weight:400;text-transform:none;color:var(--text3)">(used if no photo)</span></label>
   <div id="ei-emp-picker"></div>
   <input type="hidden" id="ei-emo-val">
   <div class="mactions"><button class="btn-o" onclick="closeM('m-edititem')">Cancel</button><button class="btn-a" onclick="App.saveEditItem()">Save Changes</button></div>
@@ -1123,6 +1137,10 @@ const App={
     document.getElementById('c-name').value='';
     document.getElementById('c-type').value='tops';
     document.getElementById('c-emo-val').value='';
+    document.getElementById('c-img-b64').value='';
+    document.getElementById('c-img-preview').innerHTML='';
+    document.getElementById('c-img-drop-label').style.display='';
+    document.getElementById('c-img-file').value='';
     EMP.init('c-emp-picker','c-emo-val','tops',null);
     document.getElementById('m-cloth').classList.remove('hidden');
     setTimeout(()=>document.getElementById('c-name').focus(),100);
@@ -1133,13 +1151,12 @@ const App={
     else{
       const name=document.getElementById('c-name').value.trim();
       const type=document.getElementById('c-type').value;
+      const imgB64=(document.getElementById('c-img-b64')?.value||'').trim();
       const iconVal=document.getElementById('c-emo-val').value||EMP.getValue('c-emp-picker')||'👕';
       if(!name){this.toast('Please enter a name.');return;}
-      const displayLabel=iconVal.startsWith('<svg')?'🧥':iconVal;
-      d.closet.push({id:'c'+Date.now(),name,type,emoji:iconVal});
+      d.closet.push({id:'c'+Date.now(),name,type,emoji:imgB64?null:iconVal,image:imgB64||null});
       closeM('m-cloth');
-      document.getElementById('c-name').value='';
-      this.toast(`${displayLabel.startsWith('<svg')?'':displayLabel} ${name} added!`);
+      this.toast(`${name} added!`);
     }
     this.save(d);
     if(this.view==='closet')this.rCloset();
@@ -1179,67 +1196,79 @@ const App={
     document.getElementById('imp-txt').value='';
   },
 
+  handleItemPhoto(input, previewId, labelId, b64Id){
+    const file=input.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const data=e.target.result;
+      document.getElementById(b64Id).value=data;
+      document.getElementById(previewId).innerHTML=`
+        <div style="position:relative;display:inline-block">
+          <img src="${data}" style="max-height:80px;max-width:100%;border-radius:8px;object-fit:cover;border:1px solid var(--border)">
+          <button onclick="App.clearItemPhoto('${previewId}','${labelId}','${b64Id}','${input.id}')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:1">×</button>
+        </div>`;
+      document.getElementById(labelId).style.display='none';
+    };
+    reader.readAsDataURL(file);
+  },
+
+  clearItemPhoto(previewId, labelId, b64Id, fileId){
+    document.getElementById(previewId).innerHTML='';
+    document.getElementById(labelId).style.display='';
+    document.getElementById(b64Id).value='';
+    document.getElementById(fileId).value='';
+  },
+
+  async _fetchDuckDuckGoImage(query){
+    try{
+      // DuckDuckGo image search via their internal endpoint
+      const url=`https://duckduckgo.com/?q=${encodeURIComponent(query)}&iax=images&ia=images&format=json`;
+      const res=await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query+' clothing product')}&iax=images&ia=images&format=json&no_html=1&skip_disambig=1`);
+      if(!res.ok)return null;
+      const json=await res.json();
+      // DuckDuckGo returns RelatedTopics with thumbnails
+      const topics=json.RelatedTopics||[];
+      for(const t of topics){
+        if(t.Icon?.URL&&t.Icon.URL.length>5) return t.Icon.URL;
+      }
+      return null;
+    }catch(e){return null;}
+  },
+
   async importCloth(){
     const txt=document.getElementById('imp-txt').value.trim();
     const hasScreenshot=!!this._impScreenshotB64;
     const hasText=!!txt;
     if(!hasText&&!hasScreenshot){this.toast('Please paste order text or upload a screenshot.');return;}
-
     const btn=document.getElementById('imp-btn');btn.textContent='Importing…';btn.disabled=true;
-
     try{
       let items=[];
-
       if(hasScreenshot){
-        // ── Screenshot mode: AI reads image and returns direct image URLs from the screenshot context
         btn.textContent='Reading screenshot…';
-        const prompt=`Look at this order/cart screenshot. For each clothing item:
-1. Extract the full item name including brand, color, style
-2. Identify type: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
-3. Suggest an emoji
-4. If you can see a product photo/thumbnail in the screenshot for this item, provide a direct URL to that image if visible in the page source context — otherwise leave imageUrl null
-5. Provide a specific product search URL from the retailer's website if you can identify the brand and product code
-
+        const prompt=`Look at this order/cart screenshot. For each clothing item extract:
+1. Full name with brand, color, style
+2. Type: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
+3. Best emoji
 Return ONLY a JSON array, no markdown:
-[{"name":"White Zara Boat Neck Top","type":"tops","emoji":"👕","imageUrl":null},...]
-${hasText?'Order text for reference:\n'+txt:''}`;
+[{"name":"White Zara Boat Neck Top","type":"tops","emoji":"👕"},...]
+${hasText?'Order text:\n'+txt:''}`;
         const raw=await callAIVision(prompt,this._impScreenshotB64,this._impScreenshotMime);
         items=JSON.parse(raw.replace(/```json|```/g,'').trim());
-
       } else {
-        // ── Text-only mode: ask AI to construct likely product image URLs
         btn.textContent='Reading order…';
-        const raw=await callAI(`Extract all clothing items from this text.
-For each item return:
-- name: full descriptive name with brand/color/style
-- type: one of tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
-- emoji: best single emoji
-- imageUrl: if you can construct a likely working direct image URL for this exact product from the retailer's CDN or website based on any product codes/SKUs in the text, provide it — otherwise null. For Zara items the product reference looks like 0/XXXX/XXX/XXX/XX. Do NOT guess or hallucinate URLs — only provide one if you are highly confident it will work.
-
-Return ONLY a JSON array, no markdown:
-[{"name":"White Zara Boat Neck Top","type":"tops","emoji":"👕","imageUrl":null},...]
-
-Text: ${txt}`,1400);
+        const raw=await callAI(`Extract all clothing items from this text. Return name, type, emoji.
+Return ONLY a JSON array, no markdown: [{"name":"White Nike Air Force 1","type":"shoes","emoji":"👟"},...]
+Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
+Text: ${txt}`,1000);
         items=JSON.parse(raw.replace(/```json|```/g,'').trim());
       }
 
-      // Verify any AI-provided image URLs actually load
-      if(items.some(it=>it.imageUrl)){
-        btn.textContent='Verifying photos…';
-        items=await Promise.all(items.map(async it=>{
-          if(!it.imageUrl) return {...it,image:null};
-          const works=await new Promise(resolve=>{
-            const img=new Image();
-            img.onload=()=>resolve(true);
-            img.onerror=()=>resolve(false);
-            img.src=it.imageUrl;
-            setTimeout(()=>resolve(false),3000);
-          });
-          return {...it,image:works?it.imageUrl:null};
-        }));
-      } else {
-        items=items.map(it=>({...it,image:null}));
-      }
+      // Try DuckDuckGo for images — best effort, silent fail
+      btn.textContent=`Finding photos…`;
+      items=await Promise.all(items.map(async it=>{
+        const img=await App._fetchDuckDuckGoImage(it.name);
+        return {...it,image:img||null};
+      }));
 
       const d=this.data();
       let photoCount=0;
@@ -1247,16 +1276,13 @@ Text: ${txt}`,1400);
         if(it.image) photoCount++;
         d.closet.push({
           id:'c'+Date.now()+Math.random().toString(36).slice(2),
-          name:it.name,
-          type:it.type||'tops',
+          name:it.name,type:it.type||'tops',
           emoji:it.image?null:(it.emoji||'👕'),
           image:it.image||null
         });
       });
-      this.save(d);
-      closeM('m-import');
-      this.impClear();
-      const photoMsg=photoCount>0?` · ${photoCount}/${items.length} photos found 🖼️`:'';
+      this.save(d);closeM('m-import');this.impClear();
+      const photoMsg=photoCount>0?` · ${photoCount}/${items.length} photos found 🖼️`:' · no photos found (you can add them manually via Edit)';
       this.toast(`Added ${items.length} items${photoMsg}!`);
       if(this.view==='closet')this.rCloset();
     }catch(e){
@@ -1400,6 +1426,17 @@ Be specific with colors and styles. Only include clearly visible items.`,
     closeSheet();
     document.getElementById('ei-name').value=item.name;
     document.getElementById('ei-emo-val').value=item.emoji||'👕';
+    document.getElementById('ei-img-b64').value=item.image||'';
+    document.getElementById('ei-img-file').value='';
+    const preview=document.getElementById('ei-img-preview');
+    const label=document.getElementById('ei-img-drop-label');
+    if(item.image){
+      preview.innerHTML=`<div style="position:relative;display:inline-block"><img src="${item.image}" style="max-height:80px;max-width:100%;border-radius:8px;object-fit:cover;border:1px solid var(--border)"><button onclick="App.clearItemPhoto('ei-img-preview','ei-img-drop-label','ei-img-b64','ei-img-file')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:1">×</button></div>`;
+      if(label)label.style.display='none';
+    }else{
+      preview.innerHTML='';
+      if(label)label.style.display='';
+    }
     EMP.init('ei-emp-picker','ei-emo-val',item.type||'tops',item.emoji||'👕');
     document.getElementById('m-edititem').classList.remove('hidden');
     setTimeout(()=>document.getElementById('ei-name').focus(),100);
@@ -1407,9 +1444,14 @@ Be specific with colors and styles. Only include clearly visible items.`,
   saveEditItem(){
     const newName=document.getElementById('ei-name').value.trim();
     const newIcon=document.getElementById('ei-emo-val').value||EMP.getValue('ei-emp-picker')||'👕';
+    const newImgB64=(document.getElementById('ei-img-b64')?.value||'').trim();
     if(!newName){this.toast('Please enter a name.');return;}
     const d=this.data();const item=d.closet.find(c=>c.id===this._sheetId);
-    if(item){item.name=newName;item.emoji=newIcon||item.emoji;}
+    if(item){
+      item.name=newName;
+      item.image=newImgB64||null;
+      item.emoji=newImgB64?null:(newIcon||item.emoji);
+    }
     this.save(d);closeM('m-edititem');this.toast('Updated!');
     if(this.view==='closet')this.rCloset();if(this.view==='laundry')this.rLaundry();
   },
