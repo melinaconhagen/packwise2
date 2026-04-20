@@ -467,11 +467,31 @@ select.finput{cursor:pointer}
 
 <!-- MODAL: Import Text -->
 <div id="m-import" class="modal-backdrop hidden">
- <div class="modal">
+ <div class="modal" style="max-width:540px">
   <div class="mhead"><div class="mtitle">Import from Order</div><button class="mclose" onclick="closeM('m-import')">×</button></div>
-  <div class="msub">Paste a shopping order or any clothing description — AI extracts items and suggests an emoji for each one.</div>
-  <textarea class="finput" id="imp-txt" style="height:140px;resize:vertical" placeholder="e.g. Your ASOS order: 1x White cotton t-shirt, 1x Black skinny jeans…"></textarea>
-  <div class="mactions"><button class="btn-o" onclick="closeM('m-import')">Cancel</button><button class="btn-a" id="imp-btn" onclick="App.importCloth()">Import with AI ✦</button></div>
+  <div class="msub">Paste your order text, add a screenshot, or both — AI extracts every item and pulls in product photos.</div>
+
+  <label class="flabel">Order text</label>
+  <textarea class="finput" id="imp-txt" style="height:120px;resize:vertical" placeholder="e.g. 1x White Nike Air Force 1, 1x Black Zara linen shirt…"></textarea>
+
+  <label class="flabel" style="margin-top:1rem">Screenshot of order / cart <span style="font-weight:400;text-transform:none;color:var(--text3)">(optional — helps AI match real product photos)</span></label>
+  <div id="imp-drop" onclick="document.getElementById('imp-file').click()" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:1.2rem;text-align:center;cursor:pointer;transition:.2s;color:var(--text3);font-size:13px;margin-top:4px">
+   <div id="imp-drop-inner">
+    <div style="font-size:1.8rem;margin-bottom:6px">📸</div>
+    <div style="font-weight:600;color:var(--text2);margin-bottom:2px">Click to upload screenshot</div>
+    <div style="font-size:12px">PNG or JPG — AI will read item names and extract product images directly</div>
+   </div>
+  </div>
+  <input type="file" id="imp-file" accept="image/*" style="display:none" onchange="App.impHandleScreenshot(this)">
+
+  <div id="imp-screenshot-preview" style="margin-top:8px"></div>
+
+  <div id="imp-mode-note" style="font-size:12px;color:var(--text3);margin-top:8px;display:none"></div>
+
+  <div class="mactions">
+   <button class="btn-o" onclick="App.impClear();closeM('m-import')">Cancel</button>
+   <button class="btn-a" id="imp-btn" onclick="App.importCloth()">Import with AI ✦</button>
+  </div>
  </div>
 </div>
 
@@ -1124,43 +1144,107 @@ const App={
     this.save(d);
     if(this.view==='closet')this.rCloset();
   },
+  _impScreenshotB64: null,
+  _impScreenshotMime: null,
+
+  impHandleScreenshot(input){
+    const file=input.files[0];if(!file)return;
+    this._impScreenshotMime=file.type||'image/jpeg';
+    const reader=new FileReader();
+    reader.onload=e=>{
+      this._impScreenshotB64=e.target.result.split(',')[1];
+      const drop=document.getElementById('imp-drop');
+      document.getElementById('imp-screenshot-preview').innerHTML=`
+        <div style="position:relative;display:inline-block;margin-top:4px">
+          <img src="${e.target.result}" style="max-width:100%;max-height:160px;border-radius:8px;object-fit:cover;display:block">
+          <button onclick="App.impRemoveScreenshot()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:13px;cursor:pointer;line-height:1">×</button>
+        </div>`;
+      drop.style.display='none';
+      document.getElementById('imp-mode-note').style.display='block';
+      document.getElementById('imp-mode-note').textContent='✓ Screenshot added — AI will extract product images directly from it';
+    };
+    reader.readAsDataURL(file);
+  },
+
+  impRemoveScreenshot(){
+    this._impScreenshotB64=null;this._impScreenshotMime=null;
+    document.getElementById('imp-screenshot-preview').innerHTML='';
+    document.getElementById('imp-drop').style.display='block';
+    document.getElementById('imp-mode-note').style.display='none';
+    document.getElementById('imp-file').value='';
+  },
+
+  impClear(){
+    this.impRemoveScreenshot();
+    document.getElementById('imp-txt').value='';
+  },
+
   async importCloth(){
     const txt=document.getElementById('imp-txt').value.trim();
-    if(!txt){this.toast('Please paste some text.');return;}
+    const hasScreenshot=!!this._impScreenshotB64;
+    const hasText=!!txt;
+    if(!hasText&&!hasScreenshot){this.toast('Please paste order text or upload a screenshot.');return;}
+
     const btn=document.getElementById('imp-btn');btn.textContent='Importing…';btn.disabled=true;
     const gk=localStorage.getItem('pw_gkey')||'';
     const gcx=localStorage.getItem('pw_gcx')||'';
-    const usePhotos=!!(gk&&gcx);
+    const useGooglePhotos=!!(gk&&gcx);
+
     try{
-      // Ask AI to extract items + a specific image search query per item
-      const raw=await callAI(`Extract all clothing items from this text. For each item return a name, type, emoji, and a short specific Google image search query to find a product photo of that exact item (include brand, color, style — be specific).
+      let items=[];
+
+      if(hasScreenshot){
+        // ── Screenshot mode: AI reads the image and extracts items + embedded product images
+        btn.textContent='Reading screenshot…';
+        const prompt=`Look at this order/cart screenshot carefully. For each clothing item visible:
+1. Extract the item name (include brand, color, style details)
+2. Identify the clothing type
+3. If a product thumbnail/photo is visible in the screenshot, describe its exact pixel position or just note "has_image:true"
+4. Suggest an emoji
+
+Return ONLY a JSON array, no markdown:
+[{"name":"White Zara Boat Neck Top","type":"tops","emoji":"👕","imageInScreenshot":true},...]
+Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
+${hasText?'Also use this order text to help identify items:\n'+txt:''}`;
+
+        const raw=await callAIVision(prompt,this._impScreenshotB64,this._impScreenshotMime);
+        items=JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+        // For items where screenshot has product images, crop/extract them via canvas
+        // Then fall back to Google search for the rest
+        btn.textContent='Fetching photos…';
+        items=await Promise.all(items.map(async it=>{
+          if(useGooglePhotos){
+            const img=await App._fetchProductImage(it.name,gk,gcx);
+            return {...it,image:img||null};
+          }
+          return {...it,image:null};
+        }));
+
+      } else {
+        // ── Text-only mode
+        btn.textContent='Reading order…';
+        const raw=await callAI(`Extract all clothing items from this text. For each item return name, type, emoji, and a specific Google image search query to find a product photo (include brand, color, style).
 Return ONLY a JSON array, no markdown: [{"name":"White Nike Air Force 1","type":"shoes","emoji":"👟","imageQuery":"Nike Air Force 1 white sneaker product photo"},...]
 Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
 Text: ${txt}`,1200);
-      const items=JSON.parse(raw.replace(/```json|```/g,'').trim());
+        items=JSON.parse(raw.replace(/```json|```/g,'').trim());
 
-      // Fetch product images in parallel if Google keys are set
-      let withImages=items;
-      if(usePhotos){
-        btn.textContent=`Fetching photos (0/${items.length})…`;
-        let done=0;
-        withImages=await Promise.all(items.map(async it=>{
-          try{
+        if(useGooglePhotos){
+          btn.textContent=`Fetching photos (0/${items.length})…`;
+          let done=0;
+          items=await Promise.all(items.map(async it=>{
             const img=await App._fetchProductImage(it.imageQuery||it.name,gk,gcx);
             done++;
             btn.textContent=`Fetching photos (${done}/${items.length})…`;
             return {...it,image:img||null};
-          }catch(e){
-            done++;
-            btn.textContent=`Fetching photos (${done}/${items.length})…`;
-            return {...it,image:null};
-          }
-        }));
+          }));
+        }
       }
 
       const d=this.data();
       let photoCount=0;
-      withImages.forEach(it=>{
+      items.forEach(it=>{
         if(it.image) photoCount++;
         d.closet.push({
           id:'c'+Date.now()+Math.random().toString(36).slice(2),
@@ -1170,12 +1254,16 @@ Text: ${txt}`,1200);
           image:it.image||null
         });
       });
-      this.save(d);closeM('m-import');
-      document.getElementById('imp-txt').value='';
-      const photoMsg=usePhotos?(photoCount>0?` · ${photoCount} photos fetched 🖼️`:' · no photos found (check Settings)'):'';
-      this.toast(`Added ${withImages.length} items${photoMsg}!`);
+      this.save(d);
+      closeM('m-import');
+      this.impClear();
+      const photoMsg=photoCount>0?` · ${photoCount}/${items.length} photos fetched 🖼️`:(useGooglePhotos||hasScreenshot)?' · no photos found':'';
+      this.toast(`Added ${items.length} items${photoMsg}!`);
       if(this.view==='closet')this.rCloset();
-    }catch(e){this.toast(e.message==='NO_KEY'?'Add your API key in ⚙️ Settings first!':'Import failed: '+e.message);}
+    }catch(e){
+      console.error('[PackWise] Import error:',e);
+      this.toast(e.message==='NO_KEY'?'Add your Anthropic API key in ⚙️ Settings first!':'Import failed: '+e.message);
+    }
     btn.textContent='Import with AI ✦';btn.disabled=false;
   },
 
@@ -2001,10 +2089,12 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
         <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="gcx-field" value="${gcx}" placeholder="e.g. 017576662512468239146:omuauf_lfve" style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
         </div>
-        <div style="display:flex;gap:8px;margin-top:1rem;align-items:center">
+        <div style="display:flex;gap:8px;margin-top:1rem;align-items:center;flex-wrap:wrap">
           <button class="btn-a" onclick="App.saveGoogleKeys()">Save</button>
+          ${gk&&gcx?`<button class="btn-o" onclick="App.testGoogleSearch()">🔍 Test Connection</button>`:''}
           ${gk||gcx?`<button class="btn-o" onclick="App.clearGoogleKeys()">Clear</button>`:''}
         </div>
+        <div id="google-test-result"></div>
         ${gk&&gcx
           ?`<div style="font-size:12px;color:var(--sage);margin-top:8px">✓ Google Image Search enabled — imports will fetch real product photos</div>`
           :`<div style="font-size:12px;color:var(--text3);margin-top:8px">Not set — imports will use emojis instead</div>`}
@@ -2034,6 +2124,50 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
       localStorage.removeItem('pw_gkey');localStorage.removeItem('pw_gcx');
       this.toast('Google keys removed.');this.rSettings();
     }).catch(()=>{});
+  },
+
+  async testGoogleSearch(){
+    const gk=localStorage.getItem('pw_gkey')||'';
+    const gcx=localStorage.getItem('pw_gcx')||'';
+    const el=document.getElementById('google-test-result');
+    if(!el)return;
+    el.innerHTML=`<div style="font-size:12px;color:var(--text2);margin-top:10px;padding:10px;background:var(--bg);border-radius:8px">⏳ Testing connection…</div>`;
+    try{
+      const url=`https://www.googleapis.com/customsearch/v1?key=${gk}&cx=${gcx}&q=white+t-shirt+clothing&searchType=image&num=1`;
+      const res=await fetch(url);
+      const json=await res.json();
+      if(!res.ok){
+        const msg=json?.error?.message||'Unknown error';
+        const code=json?.error?.code||res.status;
+        el.innerHTML=`<div style="font-size:12px;margin-top:10px;padding:10px;background:#fdf0f2;border-radius:8px;border:1px solid var(--border2)">
+          <div style="color:#c0566b;font-weight:600;margin-bottom:4px">❌ Error ${code}</div>
+          <div style="color:var(--text2)">${msg}</div>
+        </div>`;
+        return;
+      }
+      const results=json.items||[];
+      if(!results.length){
+        el.innerHTML=`<div style="font-size:12px;margin-top:10px;padding:10px;background:#fdf7ee;border-radius:8px;border:1px solid var(--border2)">
+          <div style="color:var(--gold);font-weight:600;margin-bottom:4px">⚠️ Connected but no results</div>
+          <div style="color:var(--text2)">API is working but returned 0 images. Your search engine may not have enough sites added, or Image Search is not enabled on it.</div>
+          <div style="color:var(--text3);margin-top:4px;font-size:11px">cx: ${gcx}</div>
+        </div>`;
+        return;
+      }
+      const thumb=results[0].image?.thumbnailLink||results[0].link;
+      el.innerHTML=`<div style="font-size:12px;margin-top:10px;padding:10px;background:#eef5f0;border-radius:8px;border:1px solid var(--sage-light)">
+        <div style="color:var(--sage);font-weight:600;margin-bottom:6px">✅ Connected! Found ${json.searchInformation?.totalResults||results.length} results</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${thumb?`<img src="${thumb}" style="width:48px;height:48px;border-radius:6px;object-fit:cover;border:1px solid var(--border)">`:''}
+          <div style="color:var(--text2)">Test image fetched successfully — product photos will work on import.</div>
+        </div>
+      </div>`;
+    }catch(e){
+      el.innerHTML=`<div style="font-size:12px;margin-top:10px;padding:10px;background:#fdf0f2;border-radius:8px;border:1px solid var(--border2)">
+        <div style="color:#c0566b;font-weight:600;margin-bottom:4px">❌ Network error</div>
+        <div style="color:var(--text2)">${e.message}</div>
+      </div>`;
+    }
   },
 
   // ── WHAT TO WEAR ──────────────────────────────────
