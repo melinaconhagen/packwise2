@@ -1186,60 +1186,59 @@ const App={
     if(!hasText&&!hasScreenshot){this.toast('Please paste order text or upload a screenshot.');return;}
 
     const btn=document.getElementById('imp-btn');btn.textContent='Importing…';btn.disabled=true;
-    const gk=localStorage.getItem('pw_gkey')||'';
-    const gcx=localStorage.getItem('pw_gcx')||'';
-    const useGooglePhotos=!!(gk&&gcx);
 
     try{
       let items=[];
 
       if(hasScreenshot){
-        // ── Screenshot mode: AI reads the image and extracts items + embedded product images
+        // ── Screenshot mode: AI reads image and returns direct image URLs from the screenshot context
         btn.textContent='Reading screenshot…';
-        const prompt=`Look at this order/cart screenshot carefully. For each clothing item visible:
-1. Extract the item name (include brand, color, style details)
-2. Identify the clothing type
-3. If a product thumbnail/photo is visible in the screenshot, describe its exact pixel position or just note "has_image:true"
-4. Suggest an emoji
+        const prompt=`Look at this order/cart screenshot. For each clothing item:
+1. Extract the full item name including brand, color, style
+2. Identify type: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
+3. Suggest an emoji
+4. If you can see a product photo/thumbnail in the screenshot for this item, provide a direct URL to that image if visible in the page source context — otherwise leave imageUrl null
+5. Provide a specific product search URL from the retailer's website if you can identify the brand and product code
 
 Return ONLY a JSON array, no markdown:
-[{"name":"White Zara Boat Neck Top","type":"tops","emoji":"👕","imageInScreenshot":true},...]
-Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
-${hasText?'Also use this order text to help identify items:\n'+txt:''}`;
-
+[{"name":"White Zara Boat Neck Top","type":"tops","emoji":"👕","imageUrl":null},...]
+${hasText?'Order text for reference:\n'+txt:''}`;
         const raw=await callAIVision(prompt,this._impScreenshotB64,this._impScreenshotMime);
         items=JSON.parse(raw.replace(/```json|```/g,'').trim());
 
-        // For items where screenshot has product images, crop/extract them via canvas
-        // Then fall back to Google search for the rest
-        btn.textContent='Fetching photos…';
-        items=await Promise.all(items.map(async it=>{
-          if(useGooglePhotos){
-            const img=await App._fetchProductImage(it.name,gk,gcx);
-            return {...it,image:img||null};
-          }
-          return {...it,image:null};
-        }));
-
       } else {
-        // ── Text-only mode
+        // ── Text-only mode: ask AI to construct likely product image URLs
         btn.textContent='Reading order…';
-        const raw=await callAI(`Extract all clothing items from this text. For each item return name, type, emoji, and a specific Google image search query to find a product photo (include brand, color, style).
-Return ONLY a JSON array, no markdown: [{"name":"White Nike Air Force 1","type":"shoes","emoji":"👟","imageQuery":"Nike Air Force 1 white sneaker product photo"},...]
-Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
-Text: ${txt}`,1200);
-        items=JSON.parse(raw.replace(/```json|```/g,'').trim());
+        const raw=await callAI(`Extract all clothing items from this text.
+For each item return:
+- name: full descriptive name with brand/color/style
+- type: one of tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
+- emoji: best single emoji
+- imageUrl: if you can construct a likely working direct image URL for this exact product from the retailer's CDN or website based on any product codes/SKUs in the text, provide it — otherwise null. For Zara items the product reference looks like 0/XXXX/XXX/XXX/XX. Do NOT guess or hallucinate URLs — only provide one if you are highly confident it will work.
 
-        if(useGooglePhotos){
-          btn.textContent=`Fetching photos (0/${items.length})…`;
-          let done=0;
-          items=await Promise.all(items.map(async it=>{
-            const img=await App._fetchProductImage(it.imageQuery||it.name,gk,gcx);
-            done++;
-            btn.textContent=`Fetching photos (${done}/${items.length})…`;
-            return {...it,image:img||null};
-          }));
-        }
+Return ONLY a JSON array, no markdown:
+[{"name":"White Zara Boat Neck Top","type":"tops","emoji":"👕","imageUrl":null},...]
+
+Text: ${txt}`,1400);
+        items=JSON.parse(raw.replace(/```json|```/g,'').trim());
+      }
+
+      // Verify any AI-provided image URLs actually load
+      if(items.some(it=>it.imageUrl)){
+        btn.textContent='Verifying photos…';
+        items=await Promise.all(items.map(async it=>{
+          if(!it.imageUrl) return {...it,image:null};
+          const works=await new Promise(resolve=>{
+            const img=new Image();
+            img.onload=()=>resolve(true);
+            img.onerror=()=>resolve(false);
+            img.src=it.imageUrl;
+            setTimeout(()=>resolve(false),3000);
+          });
+          return {...it,image:works?it.imageUrl:null};
+        }));
+      } else {
+        items=items.map(it=>({...it,image:null}));
       }
 
       const d=this.data();
@@ -1257,7 +1256,7 @@ Text: ${txt}`,1200);
       this.save(d);
       closeM('m-import');
       this.impClear();
-      const photoMsg=photoCount>0?` · ${photoCount}/${items.length} photos fetched 🖼️`:(useGooglePhotos||hasScreenshot)?' · no photos found':'';
+      const photoMsg=photoCount>0?` · ${photoCount}/${items.length} photos found 🖼️`:'';
       this.toast(`Added ${items.length} items${photoMsg}!`);
       if(this.view==='closet')this.rCloset();
     }catch(e){
