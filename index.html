@@ -305,6 +305,29 @@ select.finput{cursor:pointer}
 .sip-lbl{font-size:9px;color:var(--text2);text-align:center;line-height:1.2;word-break:break-word;max-width:52px}
 @media(max-width:860px){.sidebar{display:none}.main{padding:1.5rem 1rem 80px}.pack-layout{grid-template-columns:1fr}.mobile-nav{display:block}}
 @media(max-width:500px){.gtitle{font-size:1.5rem}.frow{grid-template-columns:1fr}}
+
+/* ── EMOJI PICKER (EMP) ── */
+.emp-wrap{border:1.5px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg)}
+.emp-steps{display:flex;gap:0;border-bottom:1.5px solid var(--border);background:var(--surface)}
+.emp-step-lbl{flex:1;padding:9px 12px;font-size:12px;font-weight:600;color:var(--text3);text-align:center;letter-spacing:.03em;border-bottom:2px solid transparent;transition:.15s}
+.emp-step-lbl.done{color:var(--sage);border-bottom-color:var(--sage)}
+.emp-step-lbl.active{color:var(--pink-dark);border-bottom-color:var(--pink-dark)}
+.emp-body{padding:10px}
+.emp-section-head{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin:8px 0 5px;padding-left:2px}
+.emp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:5px;margin-bottom:8px}
+.emp-item{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 3px;gap:2px}
+.emp-item:hover{border-color:var(--pink);background:var(--pink-pale);transform:scale(1.05)}
+.emp-item.sel{border-color:var(--pink-dark);background:var(--pink-pale);box-shadow:0 0 0 2px var(--pink-light)}
+.emp-item .emp-lbl{font-size:9px;color:var(--text2);text-align:center;line-height:1.2;word-break:break-word;max-width:54px}
+.emp-colors{display:flex;flex-wrap:wrap;gap:8px;padding:8px 2px 4px}
+.emp-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .12s,border-color .12s;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.emp-swatch:hover{transform:scale(1.1)}
+.emp-swatch.sel{border-color:var(--pink-dark);transform:scale(1.15)}
+.emp-preview-row{display:flex;align-items:center;gap:12px;background:var(--surface);border-top:1.5px solid var(--border);padding:10px 12px}
+.emp-preview-box{width:52px;height:52px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.emp-preview-label{font-size:12px;color:var(--text2);line-height:1.5}
+.emp-preview-label strong{display:block;font-size:13px;color:var(--text);font-weight:600}
+.emp-colors-panel{max-height:200px;overflow-y:auto}
 </style>
 </head>
 <body>
@@ -423,29 +446,21 @@ select.finput{cursor:pointer}
 
 <!-- MODAL: Add Clothing -->
 <div id="m-cloth" class="modal-backdrop hidden">
- <div class="modal" style="max-width:500px">
+ <div class="modal" style="max-width:560px">
   <div class="mhead"><div class="mtitle">Add to Closet</div><button class="mclose" onclick="closeM('m-cloth')">×</button></div>
   <div class="msub">Add a clothing item to your wardrobe</div>
   <label class="flabel">Item name</label>
   <input class="finput" id="c-name" placeholder="e.g. White linen shirt" onkeydown="if(event.key==='Enter')App.saveCloth()">
   <label class="flabel" style="margin-top:1rem">Category</label>
-  <select class="finput" id="c-type" onchange="SIP.onCatChange('c-type','c-icon-preview','c-emo','c-picker')">
+  <select class="finput" id="c-type" onchange="EMP.onCatChange('add')">
    <option value="tops">Tops</option><option value="bottoms">Bottoms</option><option value="dresses">Dresses</option>
    <option value="outerwear">Outerwear</option><option value="shoes">Shoes</option><option value="accessories">Accessories</option>
    <option value="swimwear">Swimwear</option><option value="activewear">Activewear</option>
    <option value="underwear">Underwear / Socks</option><option value="sleepwear">Sleepwear</option>
   </select>
-  <label class="flabel" style="margin-top:1rem">Icon</label>
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
-   <div id="c-icon-preview" style="width:54px;height:54px;flex-shrink:0;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center"></div>
-   <div style="flex:1">
-    <div style="font-size:12px;color:var(--text3);margin-bottom:5px">Selected icon shown above. Browse below or enter an emoji:</div>
-    <div style="display:flex;gap:6px;align-items:center">
-     <input class="finput" id="c-emo" placeholder="or type emoji 👕" style="flex:1;font-size:1.1rem" oninput="SIP.emoTyped('c-emo','c-icon-preview','c-picker')">
-    </div>
-   </div>
-  </div>
-  <div id="c-picker"></div>
+  <label class="flabel" style="margin-top:1rem">Icon — pick item then color</label>
+  <div id="c-emp-picker"></div>
+  <input type="hidden" id="c-emo-val">
   <div class="mactions"><button class="btn-o" onclick="closeM('m-cloth')">Cancel</button><button class="btn-a" onclick="App.saveCloth()">Add Item</button></div>
  </div>
 </div>
@@ -615,20 +630,14 @@ select.finput{cursor:pointer}
 
 <!-- MODAL: Edit Item -->
 <div id="m-edititem" class="modal-backdrop hidden">
- <div class="modal" style="max-width:500px">
+ <div class="modal" style="max-width:560px">
   <div class="mhead"><div class="mtitle">Edit Item</div><button class="mclose" onclick="closeM('m-edititem')">×</button></div>
   <div class="msub">Rename or change the icon for this item</div>
   <label class="flabel">Item name</label>
   <input class="finput" id="ei-name" placeholder="e.g. White linen shirt" onkeydown="if(event.key==='Enter')App.saveEditItem()">
-  <label class="flabel" style="margin-top:1rem">Icon</label>
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
-   <div id="ei-icon-preview" style="width:54px;height:54px;flex-shrink:0;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center"></div>
-   <div style="flex:1">
-    <div style="font-size:12px;color:var(--text3);margin-bottom:5px">Browse icons below, or type an emoji:</div>
-    <input class="finput" id="ei-emo" placeholder="or type emoji 👕" style="font-size:1.1rem" oninput="SIP.emoTyped('ei-emo','ei-icon-preview','ei-picker')">
-   </div>
-  </div>
-  <div id="ei-picker"></div>
+  <label class="flabel" style="margin-top:1rem">Icon — pick item then color</label>
+  <div id="ei-emp-picker"></div>
+  <input type="hidden" id="ei-emo-val">
   <div class="mactions"><button class="btn-o" onclick="closeM('m-edititem')">Cancel</button><button class="btn-a" onclick="App.saveEditItem()">Save Changes</button></div>
  </div>
 </div>
@@ -1057,9 +1066,12 @@ const App={
     const cards=filtered.map(c=>{
       const dirty=d.laundry.includes(c.id);
       const isSVG=c.emoji&&c.emoji.startsWith('<svg');
+      const isEMP=c.emoji&&c.emoji.startsWith('EMP:');
       const thumb=c.image
         ?`<img class="cloth-img" src="${c.image}" alt="">`
-        :isSVG
+        :isEMP
+          ?`<div style="width:50px;height:50px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center">${EMP.renderEmoji(c.emoji,'2.2rem')}</div>`
+          :isSVG
           ?`<div style="width:50px;height:50px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center">${c.emoji}</div>`
           :`<span class="cloth-emo">${c.emoji||'👕'}</span>`;
       return `<div class="cloth-card${dirty?' dirty':''}" onclick="App.openSheet('${c.id}')">${thumb}<div class="cloth-name">${c.name}</div><div class="cloth-type">${c.type}</div></div>`;
@@ -1090,13 +1102,8 @@ const App={
   openAddCloth(){
     document.getElementById('c-name').value='';
     document.getElementById('c-type').value='tops';
-    const cat='tops';
-    const icons=SIP_ICONS[cat],firstSub=Object.values(icons.subs)[0],firstIcon=firstSub[0];
-    const col=SIP_COLORS[cat][0];
-    SIP._state['c-picker']={cat,iconId:firstIcon.id,fill:col.f,stroke:col.k,label:`${col.n} ${firstIcon.label}`};
-    SIP._applySelection('c-icon-preview','c-emo','c-picker');
-    document.getElementById('c-picker').innerHTML='';
-    document.getElementById('c-picker').style.display='none';
+    document.getElementById('c-emo-val').value='';
+    EMP.init('c-emp-picker','c-emo-val','tops',null);
     document.getElementById('m-cloth').classList.remove('hidden');
     setTimeout(()=>document.getElementById('c-name').focus(),100);
   },
@@ -1106,12 +1113,12 @@ const App={
     else{
       const name=document.getElementById('c-name').value.trim();
       const type=document.getElementById('c-type').value;
-      const iconVal=SIP.getValue('c-picker','c-emo');
+      const iconVal=document.getElementById('c-emo-val').value||EMP.getValue('c-emp-picker')||'👕';
       if(!name){this.toast('Please enter a name.');return;}
       const displayLabel=iconVal.startsWith('<svg')?'🧥':iconVal;
       d.closet.push({id:'c'+Date.now(),name,type,emoji:iconVal});
       closeM('m-cloth');
-      document.getElementById('c-name').value='';document.getElementById('c-emo').value='';
+      document.getElementById('c-name').value='';
       this.toast(`${displayLabel.startsWith('<svg')?'':displayLabel} ${name} added!`);
     }
     this.save(d);
@@ -1121,20 +1128,67 @@ const App={
     const txt=document.getElementById('imp-txt').value.trim();
     if(!txt){this.toast('Please paste some text.');return;}
     const btn=document.getElementById('imp-btn');btn.textContent='Importing…';btn.disabled=true;
+    const gk=localStorage.getItem('pw_gkey')||'';
+    const gcx=localStorage.getItem('pw_gcx')||'';
+    const usePhotos=!!(gk&&gcx);
     try{
-      const raw=await callAI(`Extract all clothing items from this text. For each item also suggest the best single emoji to represent it visually.
-Return ONLY a JSON array, no markdown: [{"name":"White t-shirt","type":"tops","emoji":"👕"},...]
+      // Ask AI to extract items + a specific image search query per item
+      const raw=await callAI(`Extract all clothing items from this text. For each item return a name, type, emoji, and a short specific Google image search query to find a product photo of that exact item (include brand, color, style — be specific).
+Return ONLY a JSON array, no markdown: [{"name":"White Nike Air Force 1","type":"shoes","emoji":"👟","imageQuery":"Nike Air Force 1 white sneaker product photo"},...]
 Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
-Text: ${txt}`,800);
-      const items=JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+Text: ${txt}`,1200);
+      const items=JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+      // Fetch product images in parallel if Google keys are set
+      let withImages=items;
+      if(usePhotos){
+        btn.textContent=`Fetching photos (0/${items.length})…`;
+        let done=0;
+        withImages=await Promise.all(items.map(async it=>{
+          try{
+            const img=await App._fetchProductImage(it.imageQuery||it.name,gk,gcx);
+            done++;
+            btn.textContent=`Fetching photos (${done}/${items.length})…`;
+            return {...it,image:img||null};
+          }catch(e){
+            done++;
+            btn.textContent=`Fetching photos (${done}/${items.length})…`;
+            return {...it,image:null};
+          }
+        }));
+      }
+
       const d=this.data();
-      items.forEach(it=>d.closet.push({id:'c'+Date.now()+Math.random().toString(36).slice(2),name:it.name,type:it.type||'tops',emoji:it.emoji||'👕'}));
+      withImages.forEach(it=>d.closet.push({
+        id:'c'+Date.now()+Math.random().toString(36).slice(2),
+        name:it.name,
+        type:it.type||'tops',
+        emoji:it.image?null:(it.emoji||'👕'),
+        image:it.image||null
+      }));
       this.save(d);closeM('m-import');
       document.getElementById('imp-txt').value='';
-      this.toast(`Added ${items.length} items to your closet!`);
+      this.toast(`Added ${withImages.length} items${usePhotos?' with product photos 🖼️':''}!`);
       if(this.view==='closet')this.rCloset();
     }catch(e){this.toast(e.message==='NO_KEY'?'Add your API key in ⚙️ Settings first!':'Import failed: '+e.message);}
     btn.textContent='Import with AI ✦';btn.disabled=false;
+  },
+
+  async _fetchProductImage(query,gk,gcx){
+    const url=`https://www.googleapis.com/customsearch/v1?key=${gk}&cx=${gcx}&q=${encodeURIComponent(query)}&searchType=image&num=1&imgSize=medium&imgType=photo&safe=active`;
+    const res=await fetch(url);
+    if(!res.ok) return null;
+    const json=await res.json();
+    const item=json.items?.[0];
+    if(!item) return null;
+    // Verify image loads before returning
+    return new Promise(resolve=>{
+      const img=new Image();
+      img.onload=()=>resolve(item.link);
+      img.onerror=()=>resolve(item.image?.thumbnailLink||null);
+      img.src=item.link;
+      setTimeout(()=>resolve(item.image?.thumbnailLink||null),4000);
+    });
   },
 
   // ── PHOTO IMPORT ──────────────────────────────────
@@ -1179,7 +1233,9 @@ Be specific with colors and styles. Only include clearly visible items.`,
     this._sheetId=itemId;
     const emoEl=document.getElementById('s-emo'),imgEl=document.getElementById('s-img');
     const isSVG=item.emoji&&item.emoji.startsWith('<svg');
+    const isEMP=item.emoji&&item.emoji.startsWith('EMP:');
     if(item.image){emoEl.style.display='none';imgEl.src=item.image;imgEl.style.display='block';}
+    else if(isEMP){imgEl.style.display='none';emoEl.innerHTML=EMP.renderEmoji(item.emoji,'2.4rem');emoEl.style.display='block';emoEl.style.fontSize='0';}
     else if(isSVG){imgEl.style.display='none';emoEl.innerHTML=item.emoji;emoEl.style.display='block';emoEl.style.fontSize='0';}
     else{emoEl.innerHTML='';emoEl.textContent=item.emoji||'👕';emoEl.style.display='block';emoEl.style.fontSize='';}
     document.getElementById('s-name').textContent=item.name;
@@ -1240,14 +1296,14 @@ Be specific with colors and styles. Only include clearly visible items.`,
     const d=this.data();const item=d.closet.find(c=>c.id===this._sheetId);
     closeSheet();
     document.getElementById('ei-name').value=item.name;
-    // Initialize the SVG picker with the item's current icon
-    SIP.init('ei-picker','ei-icon-preview','ei-emo',item.type||'tops',item.emoji||'👕');
+    document.getElementById('ei-emo-val').value=item.emoji||'👕';
+    EMP.init('ei-emp-picker','ei-emo-val',item.type||'tops',item.emoji||'👕');
     document.getElementById('m-edititem').classList.remove('hidden');
     setTimeout(()=>document.getElementById('ei-name').focus(),100);
   },
   saveEditItem(){
     const newName=document.getElementById('ei-name').value.trim();
-    const newIcon=SIP.getValue('ei-picker','ei-emo');
+    const newIcon=document.getElementById('ei-emo-val').value||EMP.getValue('ei-emp-picker')||'👕';
     if(!newName){this.toast('Please enter a name.');return;}
     const d=this.data();const item=d.closet.find(c=>c.id===this._sheetId);
     if(item){item.name=newName;item.emoji=newIcon||item.emoji;}
@@ -1890,16 +1946,17 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
   // ── SETTINGS ──────────────────────────────────────
   rSettings(){
     const ak=localStorage.getItem('pw_api')||'';
+    const gk=localStorage.getItem('pw_gkey')||'';
+    const gcx=localStorage.getItem('pw_gcx')||'';
     document.getElementById('main').innerHTML=`
       <div class="grow"><div><div class="gtitle"><span>Settings</span></div><div class="gsub">Configure PackWise</div></div></div>
-      <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.8rem;max-width:520px">
-        <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem">✨ AI Features</div>
+
+      <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.8rem;max-width:520px;margin-bottom:1.2rem">
+        <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem">✨ AI Features — Anthropic Key</div>
         <div style="background:var(--pink-pale);border-radius:10px;padding:1rem;margin-bottom:1.2rem;font-size:13px;color:var(--text2);line-height:1.8">
           PackWise uses <b>Anthropic Claude</b> for AI features.<br>
           1️⃣ Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--pink-dark);font-weight:600">console.anthropic.com ↗</a><br>
-          2️⃣ Add $5 of credits (lasts hundreds of packing lists — fractions of a cent each)<br>
-          3️⃣ Go to <b>API Keys → Create Key</b> → copy it<br>
-          4️⃣ Paste below and click Save
+          2️⃣ Add $5 of credits · 3️⃣ API Keys → Create Key → paste below
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="password" id="ak-field" value="${ak}" placeholder="sk-ant-..." style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
@@ -1907,7 +1964,35 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
           ${ak?`<button class="btn-o" onclick="App.clearKey()">Clear</button>`:''}
         </div>
         ${ak?`<div style="font-size:12px;color:var(--sage);margin-top:8px">✓ API key saved — AI features enabled</div>`:`<div style="font-size:12px;color:var(--text3);margin-top:8px">No key saved</div>`}
-        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:12px;color:var(--text3)">Your key is stored only in your browser.</div>
+        <div style="margin-top:1rem;font-size:12px;color:var(--text3)">Your key is stored only in your browser.</div>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.8rem;max-width:520px">
+        <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem">🖼️ Product Photos — Google Image Search</div>
+        <div style="background:var(--pink-pale);border-radius:10px;padding:1rem;margin-bottom:1.2rem;font-size:13px;color:var(--text2);line-height:1.8">
+          When importing orders, PackWise can fetch real product photos instead of emojis.<br><br>
+          1️⃣ Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--pink-dark);font-weight:600">console.cloud.google.com ↗</a> → enable <b>Custom Search API</b><br>
+          2️⃣ Create an API key under <b>APIs &amp; Services → Credentials</b><br>
+          3️⃣ Go to <a href="https://programmablesearchengine.google.com" target="_blank" style="color:var(--pink-dark);font-weight:600">programmablesearchengine.google.com ↗</a><br>
+          4️⃣ Create a search engine → enable <b>Image Search</b> → copy the Search Engine ID (cx)<br>
+          5️⃣ Paste both below — free tier gives 100 searches/day
+        </div>
+        <label class="flabel">Google API Key</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="gk-field" value="${gk}" placeholder="AIza..." style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
+        </div>
+        <label class="flabel" style="margin-top:1rem">Search Engine ID (cx)</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="gcx-field" value="${gcx}" placeholder="e.g. 017576662512468239146:omuauf_lfve" style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:1rem;align-items:center">
+          <button class="btn-a" onclick="App.saveGoogleKeys()">Save</button>
+          ${gk||gcx?`<button class="btn-o" onclick="App.clearGoogleKeys()">Clear</button>`:''}
+        </div>
+        ${gk&&gcx
+          ?`<div style="font-size:12px;color:var(--sage);margin-top:8px">✓ Google Image Search enabled — imports will fetch real product photos</div>`
+          :`<div style="font-size:12px;color:var(--text3);margin-top:8px">Not set — imports will use emojis instead</div>`}
+        <div style="margin-top:1rem;font-size:12px;color:var(--text3)">Keys stored only in your browser. Never sent anywhere except Google's API.</div>
       </div>`;
     setTimeout(()=>document.getElementById('ak-field')?.focus(),100);
   },
@@ -1915,6 +2000,24 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
     const v=(document.getElementById('ak-field')?.value||'').trim();
     if(v){localStorage.setItem('pw_api',v);this.toast('API key saved! ✨');this.rSettings();}
     else this.toast('Please paste your API key.');
+  },
+  saveGoogleKeys(){
+    const gk=(document.getElementById('gk-field')?.value||'').trim();
+    const gcx=(document.getElementById('gcx-field')?.value||'').trim();
+    if(gk&&gcx){
+      localStorage.setItem('pw_gkey',gk);
+      localStorage.setItem('pw_gcx',gcx);
+      this.toast('Google Image Search enabled! 🖼️');
+      this.rSettings();
+    } else {
+      this.toast('Please enter both the API key and Search Engine ID.');
+    }
+  },
+  clearGoogleKeys(){
+    confirmDlg('Remove Google keys?','Product photo fetching will be disabled.','🖼️','Remove').then(()=>{
+      localStorage.removeItem('pw_gkey');localStorage.removeItem('pw_gcx');
+      this.toast('Google keys removed.');this.rSettings();
+    }).catch(()=>{});
   },
 
   // ── WHAT TO WEAR ──────────────────────────────────
@@ -2435,6 +2538,241 @@ const SIP = {
       if (emo) emo.value = currentVal || '';
     }
     this._state[pickerId] = { cat: cat || 'tops', iconId: null, fill: '#4A90D9', stroke: '#2A5A9A', label: '' };
+  }
+};
+
+
+// ══ EMOJI PICKER v3 (EMP) — real emojis + 6 color filters ════════════════
+// Two clicks: ① pick emoji item  ② pick color → stores colored emoji string
+
+// Each item: e = primary emoji, e2 = optional second emoji shown alongside,
+// baseFilter = optional CSS filter applied to e before user color pick
+const EMP_ITEMS = {
+  womens: {
+    label: "Women's Clothes",
+    items: [
+      {id:'long-dress',    e:'👗',  l:'Long Dress'},
+      {id:'short-dress',   e:'👗',  e2:'✂️', l:'Short Dress'},
+      {id:'jeans-w',       e:'👖',  l:'Jeans'},
+      {id:'jean-shorts',   e:'🩳',  l:'Jean Shorts',     baseFilter:'hue-rotate(195deg) saturate(2) brightness(0.85)'},
+      {id:'leggings',      e:'🩱',  e2:'🧘', l:'Leggings'},
+      {id:'biking-shorts', e:'🩲',  l:'Biking Shorts'},
+      {id:'bikini',        e:'👙',  l:'Bikini'},
+      {id:'one-piece',     e:'🩱',  l:'One Piece'},
+      {id:'flip-flops',    e:'🩴',  l:'Flip Flops'},
+      {id:'ballet-flats',  e:'🩰',  l:'Ballet Flats'},
+      {id:'sneakers-w',    e:'👟',  l:'Sneakers'},
+      {id:'womens-boots',  e:'👢',  l:"Women's Boots"},
+      {id:'high-heels',    e:'👠',  l:'High Heels'},
+      {id:'blazer-w',      e:'🥼',  e2:'💼', l:'Blazer'},
+      {id:'puffer-w',      e:'🧥',  e2:'❄️', l:'Puffer Jacket'},
+      {id:'snow-boots',    e:'🥾',  l:'Snow Boots'},
+      {id:'rain-jacket',   e:'🧥',  e2:'🌧️', l:'Rain Jacket'},
+      {id:'purse',         e:'👜',  l:'Purse'},
+      {id:'sunglasses',    e:'🕶️', l:'Sunglasses'},
+      {id:'bracelet',      e:'📿',  l:'Bracelet'},
+      {id:'linen-shirt',   e:'👔',  l:'Linen Shirt',      baseFilter:'brightness(0) invert(1)'},
+      {id:'tee-shirt',     e:'👕',  l:'Tee Shirt'},
+      {id:'tank-top',      e:'🎽',  l:'Tank Top'},
+      {id:'sports-bra',    e:'🏃‍♀️', l:'Sports Bra'},
+      {id:'mini-skirt',    e:'👗',  e2:'✂️', l:'Mini Skirt'},
+      {id:'sweater-w',     e:'👕',  e2:'🧣', l:'Sweater'},
+      {id:'long-sleeve-w', e:'👔',  l:'Long Sleeve'},
+    ]
+  },
+  mens: {
+    label: "Men's Clothes",
+    items: [
+      {id:'bathing-suit',  e:'🩳',  l:'Bathing Suit',     baseFilter:'hue-rotate(195deg) saturate(2) brightness(0.85)'},
+      {id:'suit-pants',    e:'👔',  e2:'👖', l:'Suit Pants'},
+      {id:'button-down',   e:'👔',  l:'Button Down',      baseFilter:'hue-rotate(195deg) saturate(1.5) brightness(0.9)'},
+      {id:'polo-shirt',    e:'👕',  e2:'🏌️', l:'Polo Shirt'},
+      {id:'dress-shoe',    e:'👞',  l:'Dress Shoe'},
+      {id:'khakis',        e:'👖',  l:'Khakis',           baseFilter:'sepia(1) saturate(1.5) brightness(1.1)'},
+      {id:'work-shoe',     e:'👞',  l:'Work Shoe'},
+      {id:'sweat-pants',   e:'👖',  l:'Sweat Pants'},
+      {id:'sweatshirt',    e:'👕',  e2:'👐', l:'Sweatshirt'},
+      {id:'sweater-m',     e:'👕',  e2:'🧣', l:'Sweater'},
+      {id:'jacket-m',      e:'🧥',  e2:'👔', l:'Jacket'},
+      {id:'boots-m',       e:'👢',  l:'Boots'},
+      {id:'puffer-m',      e:'🧥',  e2:'❄️', l:'Puffer Jacket'},
+      {id:'long-sleeve-m', e:'👕',  l:'Long Sleeve Tee'},
+      {id:'necktie',       e:'👔',  l:'Necktie'},
+    ]
+  }
+};
+
+const EMP_COLORS = [
+  {n:'Black',      hex:'#111111', filter:'brightness(0) saturate(100%)'},
+  {n:'White',      hex:'#FFFFFF', filter:'brightness(0) saturate(100%) invert(1)'},
+  {n:'Navy',       hex:'#1a2f5a', filter:'brightness(0) saturate(100%) invert(14%) sepia(50%) saturate(800%) hue-rotate(196deg) brightness(80%)'},
+  {n:'Light Pink', hex:'#F4C0D1', filter:'brightness(0) saturate(100%) invert(79%) sepia(30%) saturate(500%) hue-rotate(300deg) brightness(108%)'},
+  {n:'Brown',      hex:'#7B4F2E', filter:'brightness(0) saturate(100%) invert(32%) sepia(40%) saturate(600%) hue-rotate(15deg) brightness(75%)'},
+  {n:'Green',      hex:'#3B6D11', filter:'brightness(0) saturate(100%) invert(34%) sepia(60%) saturate(700%) hue-rotate(75deg) brightness(70%)'},
+];
+
+const EMP = {
+  _state: {}, // containerId → { sectionKey, itemId, colorIdx, existingVal }
+
+  onCatChange(mode) {
+    // no-op — our picker shows all items regardless of category dropdown
+  },
+
+  init(containerId, hiddenInputId, cat, currentVal) {
+    this._state[containerId] = {
+      sectionKey: null,
+      itemId: null,
+      colorIdx: null,
+      existingVal: currentVal || null
+    };
+    this._render(containerId, hiddenInputId);
+  },
+
+  getValue(containerId) {
+    const s = this._state[containerId];
+    if (!s || s.itemId === null || s.colorIdx === null) {
+      return s?.existingVal || '👕';
+    }
+    const item = this._findItem(s.itemId);
+    const col = EMP_COLORS[s.colorIdx];
+    if (!item || !col) return s?.existingVal || '👕';
+    // Format: EMP:primaryEmoji:e2orNONE:baseFilterorNONE:colorFilter:label
+    const e2 = item.e2 || 'NONE';
+    const base = item.baseFilter || 'NONE';
+    return `EMP:${item.e}:${e2}:${base}:${col.filter}:${col.n} ${item.l}`;
+  },
+
+  _findItem(itemId) {
+    for (const sec of Object.values(EMP_ITEMS)) {
+      const found = sec.items.find(i => i.id === itemId);
+      if (found) return found;
+    }
+    return null;
+  },
+
+  _pick(containerId, hiddenInputId, itemId) {
+    const s = this._state[containerId];
+    if (!s) return;
+    s.itemId = itemId;
+    s.colorIdx = null;
+    this._render(containerId, hiddenInputId);
+    // scroll color section into view
+    setTimeout(() => {
+      const el = document.getElementById(containerId + '-colors');
+      if (el) el.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }, 60);
+  },
+
+  _pickColor(containerId, hiddenInputId, colorIdx) {
+    const s = this._state[containerId];
+    if (!s) return;
+    s.colorIdx = colorIdx;
+    const val = this.getValue(containerId);
+    const hiddenEl = document.getElementById(hiddenInputId);
+    if (hiddenEl) hiddenEl.value = val;
+    this._render(containerId, hiddenInputId);
+  },
+
+  // Render an emoji for display in closet cards, sheets, etc.
+  // Stored format: EMP:primaryEmoji:e2orNONE:baseFilterorNONE:colorFilter:ColorName Label
+  renderEmoji(val, size) {
+    if (!val) return `<span style="font-size:${size||'2rem'}">👕</span>`;
+    if (val.startsWith('EMP:')) {
+      const sz = size || '2rem';
+      const parts = val.split(':');
+      // parts: [0]=EMP [1]=emoji [2]=e2 [3]=baseFilter... [n-1]=colorFilter... last=label
+      // baseFilter and colorFilter are CSS strings with spaces but no colons
+      // So splitting by ':' gives exactly: EMP, emoji, e2, baseFilter, colorFilter parts..., label
+      const primary = parts[1];
+      const e2raw = parts[2];
+      const e2 = (e2raw && e2raw !== 'NONE') ? e2raw : '';
+      const baseRaw = parts[3] !== 'NONE' ? parts[3] : '';
+      // colorFilter is everything from parts[4] up to but not including the last segment (label)
+      const colorFilter = parts.slice(4, parts.length - 1).join(':');
+      const combined = [baseRaw, colorFilter].filter(Boolean).join(' ');
+      const primaryHtml = `<span style="font-size:${sz};display:inline-block;line-height:1;${combined?'filter:'+combined:''}">${primary}</span>`;
+      const secondaryHtml = e2 ? `<span style="font-size:${sz};display:inline-block;line-height:1">${e2}</span>` : '';
+      return `<span style="letter-spacing:-3px;display:inline-block;vertical-align:middle">${primaryHtml}${secondaryHtml}</span>`;
+    }
+    if (val.startsWith('<svg')) return `<div style="width:${size||'2rem'};height:${size||'2rem'};display:flex;align-items:center;justify-content:center">${val}</div>`;
+    return `<span style="font-size:${size||'2rem'}">${val}</span>`;
+  },
+
+  // Build the display HTML for an item in the grid or preview
+  // colorFilter = user-chosen color filter (applied to primary emoji only)
+  _emoHtml(item, sz, colorFilter) {
+    const base = item.baseFilter || '';
+    // Combine baseFilter + colorFilter on the primary emoji
+    const combined = [base, colorFilter].filter(Boolean).join(' ');
+    const primary = `<span style="font-size:${sz};display:inline-block;line-height:1;${combined ? 'filter:'+combined : ''}">${item.e}</span>`;
+    const secondary = item.e2 ? `<span style="font-size:${sz};display:inline-block;line-height:1">${item.e2}</span>` : '';
+    return `<span style="letter-spacing:-3px;display:inline-block">${primary}${secondary}</span>`;
+  },
+
+  _render(containerId, hiddenInputId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const s = this._state[containerId] || {};
+
+    // ── Step 1: All emoji items ──
+    let gridHtml = '';
+    for (const [secKey, sec] of Object.entries(EMP_ITEMS)) {
+      gridHtml += `<div class="emp-section-head">${sec.label}</div><div class="emp-grid">`;
+      sec.items.forEach(item => {
+        const isSel = s.itemId === item.id;
+        const colorF = (isSel && s.colorIdx !== null) ? EMP_COLORS[s.colorIdx].filter : '';
+        gridHtml += `<div class="emp-item${isSel ? ' sel' : ''}" title="${item.l}" onclick="EMP._pick('${containerId}','${hiddenInputId}','${item.id}')">
+          ${EMP._emoHtml(item, '1.7rem', colorF)}
+          <span class="emp-lbl">${item.l}</span>
+        </div>`;
+      });
+      gridHtml += `</div>`;
+    }
+
+    // ── Step 2: Color swatches ──
+    let colorHtml = '';
+    if (s.itemId !== null) {
+      colorHtml = `<div id="${containerId}-colors" class="emp-section-head" style="margin-top:12px;font-size:11px">Step 2 — choose a color</div>
+      <div class="emp-colors emp-colors-panel" style="padding:6px 2px 8px">
+        ${EMP_COLORS.map((col, i) => {
+          const isSel = s.colorIdx === i;
+          const borderVal = col.hex === '#FFFFFF' ? '#ccc' : col.hex;
+          return `<div class="emp-swatch${isSel ? ' sel' : ''}" title="${col.n}"
+            style="background:${col.hex};border-color:${isSel ? 'var(--pink-dark)' : borderVal}"
+            onclick="EMP._pickColor('${containerId}','${hiddenInputId}',${i})">
+            ${isSel ? `<span style="color:${col.hex==='#FFFFFF'?'#333':'#fff'};font-size:14px;font-weight:700">✓</span>` : ''}
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    // ── Preview row ──
+    let previewHtml = '';
+    if (s.itemId !== null && s.colorIdx !== null) {
+      const item = this._findItem(s.itemId);
+      const col = EMP_COLORS[s.colorIdx];
+      previewHtml = `<div class="emp-preview-row">
+        <div class="emp-preview-box">${EMP._emoHtml(item, '2rem', col.filter)}</div>
+        <div class="emp-preview-label">
+          <strong>${col.n} ${item.l}</strong>
+          Selected — click Add Item to save
+        </div>
+      </div>`;
+    } else if (s.existingVal) {
+      previewHtml = `<div class="emp-preview-row">
+        <div class="emp-preview-box">${EMP.renderEmoji(s.existingVal, '2rem')}</div>
+        <div class="emp-preview-label"><strong>Current icon</strong>Pick a new one above to change it</div>
+      </div>`;
+    }
+
+    const step1done = s.itemId !== null;
+    const step2done = s.colorIdx !== null;
+    const stepsHtml = `<div class="emp-steps">
+      <div class="emp-step-lbl ${step1done ? 'done' : 'active'}">① Pick item${step1done ? ' ✓' : ''}</div>
+      <div class="emp-step-lbl ${step1done ? (step2done ? 'done' : 'active') : ''}">② Pick color${step2done ? ' ✓' : ''}</div>
+    </div>`;
+
+    container.innerHTML = `<div class="emp-wrap">${stepsHtml}<div class="emp-body" style="max-height:300px;overflow-y:auto">${gridHtml}${colorHtml}</div>${previewHtml}</div>`;
   }
 };
 
