@@ -1182,25 +1182,27 @@ Text: ${txt}`,1200);
   async _fetchProductImage(query,gk,gcx){
     try{
       const url=`https://www.googleapis.com/customsearch/v1?key=${gk}&cx=${gcx}&q=${encodeURIComponent(query)}&searchType=image&num=3&imgSize=medium&imgType=photo&safe=active`;
+      console.log('[PackWise] Fetching image for:', query);
+      console.log('[PackWise] URL:', url);
       const res=await fetch(url);
+      const json=await res.json();
+      console.log('[PackWise] API response status:', res.status);
+      console.log('[PackWise] Full response:', JSON.stringify(json, null, 2));
       if(!res.ok){
-        const errJson=await res.json().catch(()=>({}));
-        console.warn('Google image search error:',res.status,errJson?.error?.message);
+        console.warn('[PackWise] API error:', json?.error?.message, json?.error?.errors);
         return null;
       }
-      const json=await res.json();
       const results=json.items||[];
+      console.log('[PackWise] Results count:', results.length);
       if(!results.length) return null;
-      // Prefer thumbnail URLs — they are served by Google directly and always load
-      // Full image URLs from retail sites often block hotlinking
       for(const r of results){
+        console.log('[PackWise] Result:', r.link, '| thumb:', r.image?.thumbnailLink);
         const thumb=r.image?.thumbnailLink;
         if(thumb) return thumb;
       }
-      // Last resort: return the first full image link
       return results[0].link||null;
     }catch(e){
-      console.warn('Image fetch failed:',e);
+      console.warn('[PackWise] Image fetch exception:', e);
       return null;
     }
   },
