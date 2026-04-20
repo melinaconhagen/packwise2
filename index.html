@@ -1159,36 +1159,50 @@ Text: ${txt}`,1200);
       }
 
       const d=this.data();
-      withImages.forEach(it=>d.closet.push({
-        id:'c'+Date.now()+Math.random().toString(36).slice(2),
-        name:it.name,
-        type:it.type||'tops',
-        emoji:it.image?null:(it.emoji||'👕'),
-        image:it.image||null
-      }));
+      let photoCount=0;
+      withImages.forEach(it=>{
+        if(it.image) photoCount++;
+        d.closet.push({
+          id:'c'+Date.now()+Math.random().toString(36).slice(2),
+          name:it.name,
+          type:it.type||'tops',
+          emoji:it.image?null:(it.emoji||'👕'),
+          image:it.image||null
+        });
+      });
       this.save(d);closeM('m-import');
       document.getElementById('imp-txt').value='';
-      this.toast(`Added ${withImages.length} items${usePhotos?' with product photos 🖼️':''}!`);
+      const photoMsg=usePhotos?(photoCount>0?` · ${photoCount} photos fetched 🖼️`:' · no photos found (check Settings)'):'';
+      this.toast(`Added ${withImages.length} items${photoMsg}!`);
       if(this.view==='closet')this.rCloset();
     }catch(e){this.toast(e.message==='NO_KEY'?'Add your API key in ⚙️ Settings first!':'Import failed: '+e.message);}
     btn.textContent='Import with AI ✦';btn.disabled=false;
   },
 
   async _fetchProductImage(query,gk,gcx){
-    const url=`https://www.googleapis.com/customsearch/v1?key=${gk}&cx=${gcx}&q=${encodeURIComponent(query)}&searchType=image&num=1&imgSize=medium&imgType=photo&safe=active`;
-    const res=await fetch(url);
-    if(!res.ok) return null;
-    const json=await res.json();
-    const item=json.items?.[0];
-    if(!item) return null;
-    // Verify image loads before returning
-    return new Promise(resolve=>{
-      const img=new Image();
-      img.onload=()=>resolve(item.link);
-      img.onerror=()=>resolve(item.image?.thumbnailLink||null);
-      img.src=item.link;
-      setTimeout(()=>resolve(item.image?.thumbnailLink||null),4000);
-    });
+    try{
+      const url=`https://www.googleapis.com/customsearch/v1?key=${gk}&cx=${gcx}&q=${encodeURIComponent(query)}&searchType=image&num=3&imgSize=medium&imgType=photo&safe=active`;
+      const res=await fetch(url);
+      if(!res.ok){
+        const errJson=await res.json().catch(()=>({}));
+        console.warn('Google image search error:',res.status,errJson?.error?.message);
+        return null;
+      }
+      const json=await res.json();
+      const results=json.items||[];
+      if(!results.length) return null;
+      // Prefer thumbnail URLs — they are served by Google directly and always load
+      // Full image URLs from retail sites often block hotlinking
+      for(const r of results){
+        const thumb=r.image?.thumbnailLink;
+        if(thumb) return thumb;
+      }
+      // Last resort: return the first full image link
+      return results[0].link||null;
+    }catch(e){
+      console.warn('Image fetch failed:',e);
+      return null;
+    }
   },
 
   // ── PHOTO IMPORT ──────────────────────────────────
