@@ -2083,11 +2083,11 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
         </div>
         <label class="flabel">Google API Key</label>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="password" id="gk-field" value="${gk}" placeholder="AIza..." style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
+          <input type="text" id="gk-field" value="${gk}" placeholder="AIza..." autocomplete="off" style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;-webkit-text-security:disc">
         </div>
         <label class="flabel" style="margin-top:1rem">Search Engine ID (cx)</label>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="gcx-field" value="${gcx}" placeholder="e.g. 017576662512468239146:omuauf_lfve" style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
+          <input type="text" id="gcx-field" value="${gcx}" placeholder="e.g. 017576662512468239146:omuauf_lfve" autocomplete="off" style="flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
         </div>
         <div style="display:flex;gap:8px;margin-top:1rem;align-items:center;flex-wrap:wrap">
           <button class="btn-a" onclick="App.saveGoogleKeys()">Save</button>
@@ -2113,10 +2113,17 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
     if(gk&&gcx){
       localStorage.setItem('pw_gkey',gk);
       localStorage.setItem('pw_gcx',gcx);
-      this.toast('Google Image Search enabled! 🖼️');
-      this.rSettings();
+      // Verify it saved correctly
+      const savedGk=localStorage.getItem('pw_gkey')||'';
+      const savedGcx=localStorage.getItem('pw_gcx')||'';
+      if(savedGk&&savedGcx){
+        this.toast(`✅ Saved! Key: …${savedGk.slice(-6)} · cx: …${savedGcx.slice(-8)}`);
+        this.rSettings();
+      } else {
+        this.toast('❌ Save failed — try again');
+      }
     } else {
-      this.toast('Please enter both the API key and Search Engine ID.');
+      this.toast(`Please enter both fields. Got: key="${gk.slice(0,8)}…" cx="${gcx.slice(0,8)}…"`);
     }
   },
   clearGoogleKeys(){
