@@ -412,6 +412,10 @@ select.finput{cursor:pointer}
   <label class="flabel" style="margin-top:1rem">Bags for this trip</label>
   <div id="trip-bag-select" style="font-size:13px;color:var(--text3);margin-bottom:6px">Loading your saved bags…</div>
   <div style="font-size:12px;color:var(--text3);margin-top:4px">Or add custom dimensions:</div>
+  <div style="background:var(--pink-pale);border-radius:var(--radius-sm);padding:.7rem 1rem;margin-top:6px;font-size:11px;color:var(--text2);line-height:1.7">
+    📐 <strong>L</strong> = longest side · <strong>W</strong> = front to back · <strong>H</strong> = side to side<br>
+    <span style="color:var(--text3)">Carry-on max: 22×14×9 · Checked max: 27×21×14</span>
+  </div>
   <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
    <div style="flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">L (in)</div><input class="finput" type="number" id="s-l" placeholder="22" oninput="calcVol()"></div>
    <span style="color:var(--text3);margin-top:14px">×</span>
@@ -420,7 +424,6 @@ select.finput{cursor:pointer}
    <div style="flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">H (in)</div><input class="finput" type="number" id="s-h" placeholder="9" oninput="calcVol()"></div>
    <span style="font-size:12px;color:var(--text3);margin-top:14px;white-space:nowrap" id="vol-out"></span>
   </div>
-  <div style="font-size:11px;color:var(--text3);margin-top:4px">Carry-on: 22×14×9 · Checked: 27×21×14</div>
   <div class="mactions"><button class="btn-o" onclick="closeM('m-trip')">Cancel</button><button class="btn-a" onclick="App.saveTrip()">Create Trip ✦</button></div>
  </div>
 </div>
@@ -432,6 +435,13 @@ select.finput{cursor:pointer}
   <div class="msub">Give your bag a name and save its dimensions for reuse</div>
   <label class="flabel">Bag name</label>
   <input class="finput" id="b-name" placeholder="e.g. Carry-on Rimowa, Big Blue Checked">
+  <div style="background:var(--pink-pale);border-radius:var(--radius-sm);padding:.8rem 1rem;margin-top:1rem;font-size:12px;color:var(--text2);line-height:1.8">
+    📐 <strong>How to measure:</strong><br>
+    <strong>Length</strong> — longest side (top to bottom when upright)<br>
+    <strong>Width</strong> — front to back (how deep it is)<br>
+    <strong>Height</strong> — side to side (how wide it is)<br>
+    <span style="color:var(--text3)">Carry-on max: 22×14×9 · Checked max: 27×21×14</span>
+  </div>
   <div class="frow" style="margin-top:1rem">
    <div><label class="flabel">Length (in)</label><input class="finput" type="number" id="b-l" placeholder="22" oninput="calcBagVol()"></div>
    <div><label class="flabel">Width (in)</label><input class="finput" type="number" id="b-w" placeholder="14" oninput="calcBagVol()"></div>
@@ -545,6 +555,9 @@ select.finput{cursor:pointer}
   <div class="mhead"><div class="mtitle">Edit Bag</div><button class="mclose" onclick="closeM('m-editbag')">×</button></div>
   <div class="msub">Update dimensions for this bag on this trip</div>
   <label class="flabel">Bag label</label><input class="finput" id="eb-name" placeholder="e.g. Carry-on">
+  <div style="background:var(--pink-pale);border-radius:var(--radius-sm);padding:.7rem 1rem;margin-top:1rem;font-size:11px;color:var(--text2);line-height:1.7">
+    📐 <strong>L</strong> = longest side · <strong>W</strong> = front to back · <strong>H</strong> = side to side
+  </div>
   <div class="frow" style="margin-top:1rem">
    <div><label class="flabel">L (in)</label><input class="finput" type="number" id="eb-l" oninput="calcEditVol()"></div>
    <div><label class="flabel">W (in)</label><input class="finput" type="number" id="eb-w" oninput="calcEditVol()"></div>
@@ -682,6 +695,9 @@ select.finput{cursor:pointer}
   <div class="mhead"><div class="mtitle">Edit Bag</div><button class="mclose" onclick="closeM('m-editsbag')">×</button></div>
   <div class="msub">Update your bag's name and dimensions</div>
   <label class="flabel">Bag name</label><input class="finput" id="esb-name" placeholder="e.g. Carry-on Rimowa">
+  <div style="background:var(--pink-pale);border-radius:var(--radius-sm);padding:.7rem 1rem;margin-top:1rem;font-size:11px;color:var(--text2);line-height:1.7">
+    📐 <strong>L</strong> = longest side · <strong>W</strong> = front to back · <strong>H</strong> = side to side
+  </div>
   <div class="frow" style="margin-top:1rem">
    <div><label class="flabel">Length (in)</label><input class="finput" type="number" id="esb-l" oninput="calcESBVol()"></div>
    <div><label class="flabel">Width (in)</label><input class="finput" type="number" id="esb-w" oninput="calcESBVol()"></div>
@@ -701,6 +717,10 @@ select.finput{cursor:pointer}
   <div class="msub">Choose a saved bag or enter custom dimensions</div>
   <div id="atb-saved" style="margin-bottom:1rem"></div>
   <label class="flabel">Or enter custom dimensions</label>
+  <div style="background:var(--pink-pale);border-radius:var(--radius-sm);padding:.7rem 1rem;margin-top:6px;font-size:11px;color:var(--text2);line-height:1.7">
+    📐 <strong>L</strong> = longest side · <strong>W</strong> = front to back · <strong>H</strong> = side to side<br>
+    <span style="color:var(--text3)">Carry-on max: 22×14×9 · Checked max: 27×21×14</span>
+  </div>
   <label class="flabel" style="margin-top:8px">Bag name</label>
   <input class="finput" id="atb-name" placeholder="e.g. Tote bag">
   <div class="frow" style="margin-top:.8rem">
@@ -1101,10 +1121,19 @@ const App={
       const dirty=d.laundry.includes(c.id);
       const isSVG=c.emoji&&c.emoji.startsWith('<svg');
       const isEMP=c.emoji&&c.emoji.startsWith('EMP:');
+      // Extract cardBg from stored EMP value for contrast
+      let empCardBg='';
+      if(isEMP){
+        const parts=c.emoji.split(':');
+        // Find matching color by checking filter string
+        const colorFilter=parts.slice(4,parts.length-1).join(':');
+        const match=EMP_COLORS.find(col=>col.filter===colorFilter);
+        if(match)empCardBg=match.cardBg||'';
+      }
       const thumb=c.image
         ?`<img class="cloth-img" src="${c.image}" alt="">`
         :isEMP
-          ?`<div style="width:50px;height:50px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center">${EMP.renderEmoji(c.emoji,'2.2rem')}</div>`
+          ?`<div style="width:50px;height:50px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;border-radius:8px;${empCardBg?'background:'+empCardBg:''}">${EMP.renderEmoji(c.emoji,'2.2rem')}</div>`
           :isSVG
           ?`<div style="width:50px;height:50px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center">${c.emoji}</div>`
           :`<span class="cloth-emo">${c.emoji||'👕'}</span>`;
@@ -2801,12 +2830,17 @@ const EMP_ITEMS = {
 };
 
 const EMP_COLORS = [
-  {n:'Black',      hex:'#111111', filter:'brightness(0) saturate(100%)'},
-  {n:'White',      hex:'#FFFFFF', filter:'brightness(0) saturate(100%) invert(1)'},
-  {n:'Navy',       hex:'#1a2f5a', filter:'brightness(0) saturate(100%) invert(14%) sepia(50%) saturate(800%) hue-rotate(196deg) brightness(80%)'},
-  {n:'Light Pink', hex:'#F4C0D1', filter:'brightness(0) saturate(100%) invert(79%) sepia(30%) saturate(500%) hue-rotate(300deg) brightness(108%)'},
-  {n:'Brown',      hex:'#7B4F2E', filter:'brightness(0) saturate(100%) invert(32%) sepia(40%) saturate(600%) hue-rotate(15deg) brightness(75%)'},
-  {n:'Green',      hex:'#3B6D11', filter:'brightness(0) saturate(100%) invert(34%) sepia(60%) saturate(700%) hue-rotate(75deg) brightness(70%)'},
+  {n:'Black',      hex:'#111111', filter:'brightness(0) saturate(100%)',                                                                                         cardBg:'#f5f5f5'},
+  {n:'White',      hex:'#FFFFFF', filter:'brightness(0) saturate(100%) invert(1)',                                                                               cardBg:'#555555'},
+  {n:'Navy',       hex:'#1a2f5a', filter:'brightness(0) saturate(100%) invert(14%) sepia(50%) saturate(800%) hue-rotate(196deg) brightness(80%)',                cardBg:'#e8edf5'},
+  {n:'Light Pink', hex:'#F4C0D1', filter:'brightness(0) saturate(100%) invert(79%) sepia(30%) saturate(500%) hue-rotate(300deg) brightness(108%)',               cardBg:'#fff0f4'},
+  {n:'Brown',      hex:'#7B4F2E', filter:'brightness(0) saturate(100%) invert(32%) sepia(40%) saturate(600%) hue-rotate(15deg) brightness(75%)',                 cardBg:'#f5ede8'},
+  {n:'Green',      hex:'#3B6D11', filter:'brightness(0) saturate(100%) invert(34%) sepia(60%) saturate(700%) hue-rotate(75deg) brightness(70%)',                 cardBg:'#edf5e8'},
+  {n:'Tan',        hex:'#C8A86B', filter:'brightness(0) saturate(100%) invert(70%) sepia(30%) saturate(500%) hue-rotate(15deg) brightness(95%)',                 cardBg:'#fdf7ee'},
+  {n:'Light Blue', hex:'#7FB5D5', filter:'brightness(0) saturate(100%) invert(65%) sepia(30%) saturate(500%) hue-rotate(180deg) brightness(100%)',               cardBg:'#eaf4fb'},
+  {n:'Red',        hex:'#C0392B', filter:'brightness(0) saturate(100%) invert(22%) sepia(80%) saturate(900%) hue-rotate(340deg) brightness(85%)',                cardBg:'#fdf0ee'},
+  {n:'Beige',      hex:'#E8D5B0', filter:'brightness(0) saturate(100%) invert(87%) sepia(15%) saturate(400%) hue-rotate(15deg) brightness(103%)',                cardBg:'#555555'},
+  {n:'Yellow',     hex:'#E8C840', filter:'brightness(0) saturate(100%) invert(80%) sepia(60%) saturate(700%) hue-rotate(10deg) brightness(105%)',                cardBg:'#fdf8e8'},
 ];
 
 const EMP = {
@@ -2919,7 +2953,9 @@ const EMP = {
       sec.items.forEach(item => {
         const isSel = s.itemId === item.id;
         const colorF = (isSel && s.colorIdx !== null) ? EMP_COLORS[s.colorIdx].filter : '';
-        gridHtml += `<div class="emp-item${isSel ? ' sel' : ''}" title="${item.l}" onclick="EMP._pick('${containerId}','${hiddenInputId}','${item.id}')">
+        // Use cardBg when color is selected to ensure emoji is visible against the card background
+        const cardBg = (isSel && s.colorIdx !== null) ? EMP_COLORS[s.colorIdx].cardBg : '';
+        gridHtml += `<div class="emp-item${isSel ? ' sel' : ''}" title="${item.l}" onclick="EMP._pick('${containerId}','${hiddenInputId}','${item.id}')" ${cardBg?`style="background:${cardBg}"`:''}>
           ${EMP._emoHtml(item, '1.7rem', colorF)}
           <span class="emp-lbl">${item.l}</span>
         </div>`;
@@ -2934,11 +2970,15 @@ const EMP = {
       <div class="emp-colors emp-colors-panel" style="padding:6px 2px 8px">
         ${EMP_COLORS.map((col, i) => {
           const isSel = s.colorIdx === i;
-          const borderVal = col.hex === '#FFFFFF' ? '#ccc' : col.hex;
+          // For light colors (white, beige, light pink, light blue) use dark checkmark
+          const lightColors = ['#FFFFFF','#E8D5B0','#F4C0D1','#7FB5D5'];
+          const isLight = lightColors.includes(col.hex);
+          const border = isLight ? '2px solid #ccc' : `2px solid ${col.hex}`;
+          const checkColor = isLight ? '#333' : '#fff';
           return `<div class="emp-swatch${isSel ? ' sel' : ''}" title="${col.n}"
-            style="background:${col.hex};border-color:${isSel ? 'var(--pink-dark)' : borderVal}"
+            style="background:${col.hex};border:${isSel?'2.5px solid var(--pink-dark)':border}"
             onclick="EMP._pickColor('${containerId}','${hiddenInputId}',${i})">
-            ${isSel ? `<span style="color:${col.hex==='#FFFFFF'?'#333':'#fff'};font-size:14px;font-weight:700">✓</span>` : ''}
+            ${isSel ? `<span style="color:${checkColor};font-size:14px;font-weight:700">✓</span>` : ''}
           </div>`;
         }).join('')}
       </div>`;
@@ -2950,7 +2990,9 @@ const EMP = {
       const item = this._findItem(s.itemId);
       const col = EMP_COLORS[s.colorIdx];
       previewHtml = `<div class="emp-preview-row">
-        <div class="emp-preview-box">${EMP._emoHtml(item, '2rem', col.filter)}</div>
+        <div class="emp-preview-box" style="background:${col.cardBg||'var(--bg)'}">
+          ${EMP._emoHtml(item, '2rem', col.filter)}
+        </div>
         <div class="emp-preview-label">
           <strong>${col.n} ${item.l}</strong>
           Selected — click Add Item to save
