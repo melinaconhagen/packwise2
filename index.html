@@ -1603,10 +1603,13 @@ Be specific with colors and styles. Only include clearly visible items.`,
           const closetNames=(o.closetItems||[]).map(c=>c.name).join(', ');
           const customNames=(o.customItems||[]).join(', ');
           const detail=[closetNames,customNames].filter(Boolean).join(' + ');
-          const label=`${o.emoji||'👗'} ${o.name}${detail?' ('+detail+')':''}`;
+          const isEMPOutfit=o.emoji?.startsWith('EMP:');
+          const emojiDisplay=isEMPOutfit?EMP.renderEmoji(o.emoji,'1rem'):o.emoji||'👗';
+          const label=`${emojiDisplay} ${o.name}${detail?' ('+detail+')':''}`;
+          const dirty=(o.closetItems||[]).some(ci=>d.laundry.includes(ci.id));
           return `<div class="check-item-row">
             <input type="checkbox" class="check-box" ${o.packed?'checked':''} onchange="App.togglePacked('${trip.id}',${day.day},${oi},this.checked)" id="ck-${day.day}-${oi}">
-            <label class="check-label${o.packed?' done':''}" for="ck-${day.day}-${oi}">${label}</label>
+            <label class="check-label${o.packed?' done':''}" for="ck-${day.day}-${oi}">${label}${dirty?' <span style="font-size:10px;color:var(--pink-dark)">🧺 wash first</span>':''}</label>
           </div>`;
         }).join('')}`;
       }).join('');
@@ -1639,9 +1642,12 @@ Be specific with colors and styles. Only include clearly visible items.`,
               const chips=(o.closetItems||[]).map(ci=>{
                 const cnt=itemUsage[ci.id]||0;
                 const ciDirty=laundry.includes(ci.id);
-                const isEMP=ci.emoji&&ci.emoji.startsWith('EMP:');
-                const thumb=ci.image?`<img src="${ci.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover">`:isEMP?EMP.renderEmoji(ci.emoji,'1rem'):`<span>${ci.emoji||'👕'}</span>`;
-                return `<span class="ob-chip" style="${ciDirty?'border-color:var(--pink-dark);background:var(--pink-pale)':''}">${thumb}${ci.name}${ciDirty?' 🧺':''}${cnt>1?`<span class="repeat-badge">×${cnt}</span>`:''}</span>`;
+                const isEMP=ci.emoji?.startsWith('EMP:');
+                const thumb=ci.image
+                  ?`<img src="${ci.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;vertical-align:middle">`
+                  :isEMP?`<span style="vertical-align:middle">${EMP.renderEmoji(ci.emoji,'1rem')}</span>`
+                  :`<span style="vertical-align:middle">${ci.emoji||'👕'}</span>`;
+                return `<span class="ob-chip" style="${ciDirty?'border-color:var(--pink-dark);background:var(--pink-pale)':''}">${thumb} ${ci.name}${ciDirty?' 🧺':''}${cnt>1?`<span class="repeat-badge">×${cnt}</span>`:''}</span>`;
               }).join('');
               const customChips=(o.customItems||[]).map(c=>`<span class="ob-chip">✏️ ${c}</span>`).join('');
               const allChips=chips+customChips;
@@ -2139,37 +2145,43 @@ Exactly ${trip.duration} day entries. Multiple outfits per day where activities 
   // ── SAVED OUTFIT GROUPS ──────────────────────────
   rOutfits(){
     const d=this.data();const ogs=d.outfitGroups||[];
-    const cards=ogs.map(og=>`
-      <div class="og-card">
-        <div class="og-name">${og.name}</div>
-        <div class="og-meta">${og.group||'Uncategorized'} · ${og.items.length} item${og.items.length!==1?'s':''}</div>
-        <div class="og-items">${og.items.map(it=>`<span class="og-item">${it}</span>`).join('')}</div>
-        <div class="og-actions">
-          <button class="btn-o btn-sm" onclick="App.ogAddToTrip('${og.id}')">+ Add to Trip</button>
-          <button class="btn-o btn-sm" onclick="App.ogEdit('${og.id}')">✏️</button>
-          <button class="btn-o btn-sm" style="color:#c0566b" onclick="App.ogDelete('${og.id}')">🗑️</button>
-        </div>
-      </div>`).join('');
-    // Group by category
+
+    // Helper to render a single closet item chip correctly
+    const renderOGChip=(it)=>{
+      // it can be a string (legacy), or {id,name,emoji,image}
+      if(typeof it==='string') return `<span class="og-item">✏️ ${it}</span>`;
+      const isEMP=it.emoji?.startsWith('EMP:');
+      const thumb=it.image
+        ?`<img src="${it.image}" style="width:14px;height:14px;border-radius:3px;object-fit:cover;vertical-align:middle;margin-right:2px">`
+        :isEMP?`<span style="vertical-align:middle">${EMP.renderEmoji(it.emoji,'1rem')}</span>`
+        :`<span style="vertical-align:middle">${it.emoji||'👕'}</span>`;
+      return `<span class="og-item">${thumb} ${it.name}</span>`;
+    };
+
     const groups=[...new Set(ogs.map(o=>o.group||'Uncategorized'))];
     const grouped=groups.map(g=>{
       const inGroup=ogs.filter(o=>(o.group||'Uncategorized')===g);
       return `<div style="margin-bottom:1.5rem">
         <div class="st" style="margin-bottom:.8rem">${g}</div>
-        <div class="og-grid">${inGroup.map(og=>`
-          <div class="og-card">
+        <div class="og-grid">${inGroup.map(og=>{
+          const allItems=[...(og.closetItems||[]),...(og.items||[]).map(i=>typeof i==='string'?i:{name:i})];
+          const itemCount=allItems.length;
+          const chips=allItems.map(renderOGChip).join('');
+          return `<div class="og-card">
             <div class="og-name">${og.name}</div>
-            <div class="og-meta">${og.items.length} item${og.items.length!==1?'s':''}</div>
-            <div class="og-items">${(og.closetItems||og.items||[]).map(it=>typeof it==='string'?`<span class="og-item">${it}</span>`:`<span class="og-item">${it.emoji||'👕'} ${it.name}</span>`).join('')}</div>
+            <div class="og-meta">${itemCount} item${itemCount!==1?'s':''}</div>
+            <div class="og-items">${chips||'<span style="font-size:11px;color:var(--text3);font-style:italic">No items</span>'}</div>
             <div class="og-actions">
               <button class="btn-a btn-sm" onclick="App.ogAddToTrip('${og.id}')">+ Add to Trip</button>
               <button class="btn-o btn-sm" onclick="App.ogEdit('${og.id}')">✏️</button>
               <button class="btn-o btn-sm" style="color:#c0566b" onclick="App.ogDelete('${og.id}')">🗑️</button>
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
           <div class="dash-tile" style="min-height:80px" onclick="App.openOG()"><div style="font-size:1.4rem">+</div><div>New outfit</div></div>
         </div></div>`;
     }).join('');
+
     document.getElementById('main').innerHTML=`
       <div class="grow">
         <div><div class="gtitle"><span>Saved Outfits</span></div><div class="gsub">${ogs.length} saved outfit${ogs.length!==1?'s':''} — reuse them across any trip</div></div>
