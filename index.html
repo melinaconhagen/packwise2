@@ -1533,7 +1533,8 @@ Be specific with colors and styles. Only include clearly visible items.`,
           <div class="cap-bar"><div class="cap-fill ${barCls}" style="width:${pct}%"></div></div>
           <div class="cap-text">${pct}% full · ~${bagOutfitCount} item${bagOutfitCount!==1?'s':''}</div>
         </div>
-        <button class="ibtn" onclick="App.openEditBag('${trip.id}',${bi})" title="Edit bag">✏️</button>
+        <button class="ibtn" onclick="App.openEditBag('${trip.id}',${bi})" title="Edit bag dimensions">✏️</button>
+        <button class="ibtn" onclick="App.swapBag('${trip.id}',${bi})" title="Swap bag">🔄</button>
         ${bags.length>1?`<button class="ibtn red" onclick="App.removeBag('${trip.id}',${bi})" title="Remove bag">✕</button>`:''}
       </div>`;
     }).join('');
@@ -1626,25 +1627,36 @@ Be specific with colors and styles. Only include clearly visible items.`,
           <div class="day-card">
             <div class="day-head">
               <div class="day-title">Day ${day.day}${day.weather?`<span class="day-wx">${day.weather}</span>`:''}</div>
-              <button class="add-outfit-btn" onclick="App.openAddOutfit('${trip.id}',${di})">+ Add outfit</button>
+              <div style="display:flex;gap:5px">
+                <button class="add-outfit-btn" onclick="App.openAddSavedOutfit('${trip.id}',${di})">+ Saved outfit</button>
+                <button class="add-outfit-btn" onclick="App.openAddOutfit('${trip.id}',${di})">+ Items</button>
+              </div>
             </div>
             ${(day.outfits||[]).map((o,oi)=>{
-              const isDirty=o.closetItems?.some(ci=>laundry.includes(ci.id))||laundry.includes(o.id);
-              const chips=(o.closetItems||[]).map(ci=>{const cnt=itemUsage[ci.id]||0;return `<span class="ob-chip">${ci.image?`<img src="${ci.image}">`:`<span>${ci.emoji||'👕'}</span>`}${ci.name}${cnt>1?`<span class="repeat-badge">×${cnt}</span>`:''}</span>`;}).join('');
+              const dirtyItems=(o.closetItems||[]).filter(ci=>laundry.includes(ci.id)).map(ci=>ci.name);
+              const isDirty=dirtyItems.length>0||laundry.includes(o.id);
+              const chips=(o.closetItems||[]).map(ci=>{
+                const cnt=itemUsage[ci.id]||0;
+                const ciDirty=laundry.includes(ci.id);
+                const isEMP=ci.emoji&&ci.emoji.startsWith('EMP:');
+                const thumb=ci.image?`<img src="${ci.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover">`:isEMP?EMP.renderEmoji(ci.emoji,'1rem'):`<span>${ci.emoji||'👕'}</span>`;
+                return `<span class="ob-chip" style="${ciDirty?'border-color:var(--pink-dark);background:var(--pink-pale)':''}">${thumb}${ci.name}${ciDirty?' 🧺':''}${cnt>1?`<span class="repeat-badge">×${cnt}</span>`:''}</span>`;
+              }).join('');
               const customChips=(o.customItems||[]).map(c=>`<span class="ob-chip">✏️ ${c}</span>`).join('');
               const allChips=chips+customChips;
               return `<div class="outfit-block">
                 <div class="ob-head">
-                  <div class="ob-title">${o.emoji||'👗'} ${o.name}${isDirty?'<span class="outfit-dirty">🧺 dirty</span>':''}</div>
+                  <div class="ob-title">${o.emoji||'👗'} ${o.name}${isDirty?`<span class="outfit-dirty">🧺 wash first</span>`:''}</div>
                   <div class="ob-actions">
                     <button class="ibtn" onclick="App.editOutfit('${trip.id}',${di},${oi})" title="Edit">✏️</button>
                     <button class="ibtn red" onclick="App.delOutfit('${trip.id}',${di},${oi})" title="Remove">✕</button>
                   </div>
                 </div>
                 <div class="ob-items">${allChips||'<span class="ob-empty">No items added</span>'}</div>
+                ${isDirty?`<div style="font-size:11px;color:var(--pink-dark);margin-top:6px;background:var(--pink-pale);border-radius:6px;padding:4px 8px">🧺 ${dirtyItems.length?dirtyItems.join(', ')+' need':o.name+' needs'} washing before this trip</div>`:''}
               </div>`;
             }).join('')}
-            ${!(day.outfits||[]).length?`<div style="font-size:12px;color:var(--text3);padding:6px 0;font-style:italic">No outfits yet — click "+ Add outfit" above</div>`:''}
+            ${!(day.outfits||[]).length?`<div style="font-size:12px;color:var(--text3);padding:6px 0;font-style:italic">No outfits yet — add a saved outfit or pick items above</div>`:''}
           </div>`).join('');
     }
 
@@ -1812,9 +1824,16 @@ Respond ONLY with JSON (no markdown):
       :items.map(c=>{
         const sel=this._pickerSelected.some(s=>s.id===c.id);
         const dirty=d.laundry.includes(c.id);
-        return `<div class="cp-item${sel?' selected':''}${dirty?' dirty-item':''}" onclick="App._togglePicker('${c.id}','${pickerId}','${countId}')" title="${c.name}${dirty?' (in laundry)':''}">
-          ${c.image?`<img class="cp-img" src="${c.image}">`:`<div class="cp-emo">${c.emoji||'👕'}</div>`}
+        const isEMP=c.emoji&&c.emoji.startsWith('EMP:');
+        const thumb=c.image
+          ?`<img class="cp-img" src="${c.image}">`
+          :isEMP
+            ?`<div style="width:44px;height:44px;margin:0 auto 3px;display:flex;align-items:center;justify-content:center">${EMP.renderEmoji(c.emoji,'1.5rem')}</div>`
+            :`<div class="cp-emo">${c.emoji||'👕'}</div>`;
+        return `<div class="cp-item${sel?' selected':''}${dirty?' dirty-item':''}" onclick="App._togglePicker('${c.id}','${pickerId}','${countId}')" title="${c.name}${dirty?' (🧺 in laundry — wash before trip)':''}">
+          ${thumb}
           <div class="cp-name">${c.name}</div>
+          ${dirty?`<div style="font-size:9px;color:var(--pink-dark);margin-top:2px">🧺 dirty</div>`:''}
         </div>`;
       }).join('');
     this._updatePickerCount(countId);
@@ -1867,6 +1886,109 @@ Respond ONLY with JSON (no markdown):
       occasion:'manual'
     });
     this.save(d);closeM('m-outfit');this.toast(emoji+' "'+name+'" added!');this.rPacking();
+  },
+
+  openAddSavedOutfit(tripId,dayIdx){
+    const d=this.data();
+    const groups=d.outfitGroups||[];
+    if(!groups.length){
+      this.toast('No saved outfits yet — create some in the Outfits tab first!');return;
+    }
+    this._outfitTripId=tripId;this._outfitDayIdx=dayIdx;
+    const trip=d.trips.find(t=>t.id===tripId);
+    // Build a modal-style picker for saved outfits
+    const listHtml=groups.map(og=>{
+      const items=(og.closetItems||[]).map(ci=>{
+        const closetItem=d.closet.find(c=>c.id===(ci.id||ci));
+        const isEMP=closetItem?.emoji?.startsWith('EMP:');
+        const thumb=closetItem?.image?`<img src="${closetItem.image}" style="width:20px;height:20px;border-radius:4px;object-fit:cover">`
+          :isEMP?EMP.renderEmoji(closetItem.emoji,'1rem')
+          :`<span style="font-size:.9rem">${closetItem?.emoji||ci.emoji||'👕'}</span>`;
+        return `<span class="ob-chip" style="font-size:11px">${thumb} ${closetItem?.name||ci.name||ci}</span>`;
+      }).join('');
+      return `<div class="cp-item" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;max-width:100%;box-sizing:border-box" onclick="App._addSavedOutfitToDay('${og.id}')">
+        <div style="font-size:1.4rem;flex-shrink:0">${og.closetItems?.[0]?.emoji||'👗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;color:var(--text)">${og.name}</div>
+          <div style="font-size:11px;color:var(--text3)">${og.group||'Uncategorized'}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${items}</div>
+        </div>
+        <div style="font-size:18px;color:var(--pink-dark);flex-shrink:0">→</div>
+      </div>`;
+    }).join('');
+    // Show in a simple modal
+    const existing=document.getElementById('m-savedoutfit');
+    if(existing)existing.remove();
+    const modal=document.createElement('div');
+    modal.id='m-savedoutfit';
+    modal.className='modal-backdrop';
+    modal.innerHTML=`<div class="modal" style="max-width:480px">
+      <div class="mhead"><div class="mtitle">Add Saved Outfit</div><button class="mclose" onclick="document.getElementById('m-savedoutfit').remove()">×</button></div>
+      <div class="msub">Adding to Day ${trip.packingList[dayIdx].day} — ${trip.destination}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;padding:2px">${listHtml}</div>
+      <div class="mactions"><button class="btn-o" onclick="document.getElementById('m-savedoutfit').remove()">Cancel</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+  },
+
+  _addSavedOutfitToDay(ogId){
+    const d=this.data();
+    const og=d.outfitGroups.find(o=>o.id===ogId);if(!og)return;
+    const trip=d.trips.find(t=>t.id===this._outfitTripId);
+    const closetItems=(og.closetItems||[]).map(ci=>{
+      const item=d.closet.find(c=>c.id===(ci.id||ci));
+      return item?{id:item.id,name:item.name,emoji:item.emoji,image:item.image}:null;
+    }).filter(Boolean);
+    trip.packingList[this._outfitDayIdx].outfits.push({
+      id:'o'+Date.now(),
+      name:og.name,
+      emoji:closetItems[0]?.emoji||'👗',
+      closetItems,
+      customItems:og.items||[],
+      occasion:'saved'
+    });
+    this.save(d);
+    document.getElementById('m-savedoutfit')?.remove();
+    this.toast(`👗 "${og.name}" added!`);
+    this.rPacking();
+  },
+
+  swapBag(tripId,bagIdx){
+    const d=this.data();
+    const trip=d.trips.find(t=>t.id===tripId);
+    const savedBags=d.bags||[];
+    if(!savedBags.length){
+      this.toast('No saved bags — add bags in My Luggage first!');return;
+    }
+    const existing=document.getElementById('m-swapbag');
+    if(existing)existing.remove();
+    const modal=document.createElement('div');
+    modal.id='m-swapbag';
+    modal.className='modal-backdrop';
+    const current=trip.bags[bagIdx];
+    modal.innerHTML=`<div class="modal modal-sm">
+      <div class="mhead"><div class="mtitle">Swap Bag</div><button class="mclose" onclick="document.getElementById('m-swapbag').remove()">×</button></div>
+      <div class="msub">Currently: <strong>${current.name}</strong> (${current.l}"×${current.w}"×${current.h}")</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        ${savedBags.map(b=>`<button class="btn-o" style="text-align:left;padding:10px 14px" onclick="App._doSwapBag('${tripId}',${bagIdx},'${b.id}')">
+          <div style="font-weight:600">🧳 ${b.name}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${b.l}"×${b.w}"×${b.h}" · ${volL(b.l,b.w,b.h)}L</div>
+        </button>`).join('')}
+      </div>
+      <div class="mactions"><button class="btn-o" onclick="document.getElementById('m-swapbag').remove()">Cancel</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+  },
+
+  _doSwapBag(tripId,bagIdx,savedBagId){
+    const d=this.data();
+    const trip=d.trips.find(t=>t.id===tripId);
+    const bag=d.bags.find(b=>b.id===savedBagId);if(!bag)return;
+    trip.bags[bagIdx]={...trip.bags[bagIdx],name:bag.name,l:bag.l,w:bag.w,h:bag.h};
+    this.save(d);
+    document.getElementById('m-swapbag')?.remove();
+    this.toast(`Swapped to ${bag.name}!`);
+    this.rPacking();
   },
 
   editOutfit(tripId,di,oi){
