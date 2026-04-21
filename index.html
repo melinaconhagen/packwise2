@@ -1836,8 +1836,8 @@ Be specific with colors and styles. Only include clearly visible items.`,
     delete day.notes;delete day._notesOpen;delete day._notesDraft;
     this.save(d);this.rPacking();
   },
+  togglePackedItem(tripId,itemId,checked){
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
-    // Mark this item as packed/unpacked across all outfits that contain it
     (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
       if((o.closetItems||[]).some(ci=>ci.id===itemId)){
         if(!o.packedItems)o.packedItems={};
