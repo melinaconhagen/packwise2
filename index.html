@@ -1675,7 +1675,12 @@ Be specific with colors and styles. Only include clearly visible items.`,
 
       listHtml=progressBar+`<div style="font-size:13px;color:var(--text2);margin-bottom:12px;background:var(--pink-pale);border-radius:8px;padding:8px 12px">
         📦 <strong>${totalUnique} unique item${totalUnique!==1?'s':''} to pack</strong> — items worn multiple days appear once
-      </div>`+checkRows+`<div style="margin-top:1rem">
+      </div>`
+      // Show any day notes as reminders at the top of checklist
+      +(()=>{
+        const notes=(trip.packingList||[]).filter(day=>day.notes).map(day=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:600;color:var(--pink-dark);white-space:nowrap">Day ${day.day}</span><span style="font-size:12px;color:var(--text2)">${day.notes.replace(/\n/g,' · ')}</span></div>`).join('');
+        return notes?`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📝 Trip reminders</div>${notes}</div>`:'';
+      })()+checkRows+`<div style="margin-top:1rem">
         <button class="btn-o btn-sm" onclick="App.resetPacked('${trip.id}')">↺ Reset all checkboxes</button>
       </div>`;
     } else {
@@ -1729,6 +1734,24 @@ Be specific with colors and styles. Only include clearly visible items.`,
               </div>`;
             }).join('')}
             ${!(day.outfits||[]).length?`<div style="font-size:12px;color:var(--text3);padding:6px 0;font-style:italic">No outfits yet — add a saved outfit or pick items above</div>`:''}
+            <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${day.notes?'6px':'0'}">
+                <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">📝 Day notes</span>
+                <button class="ibtn" onclick="App.toggleDayNotes('${trip.id}',${di})" style="font-size:11px;color:var(--text3)">${day.notes||day._notesOpen?'▲ hide':'▼ add note'}</button>
+              </div>
+              ${day.notes?`<div style="font-size:13px;color:var(--text2);background:var(--pink-pale);border-radius:8px;padding:8px 10px;line-height:1.5">${day.notes.replace(/\n/g,'<br>')}</div>`:''}
+              <div id="day-notes-input-${trip.id}-${di}" style="display:${day._notesOpen&&!day.notes?'block':'none'};margin-top:6px">
+                <textarea class="finput" placeholder="e.g. Dinner reservation at Nobu 8pm · Fancy dress required · Check-in at hotel" style="height:80px;resize:vertical;font-size:13px" oninput="App._draftDayNote('${trip.id}',${di},this.value)" id="day-notes-ta-${trip.id}-${di}">${day._notesDraft||''}</textarea>
+                <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
+                  <button class="btn-o btn-sm" onclick="App.cancelDayNote('${trip.id}',${di})">Cancel</button>
+                  <button class="btn-a btn-sm" onclick="App.saveDayNote('${trip.id}',${di})">Save note</button>
+                </div>
+              </div>
+              ${day.notes?`<div style="display:flex;gap:6px;margin-top:4px">
+                <button class="ibtn" style="font-size:11px" onclick="App.editDayNote('${trip.id}',${di})">✏️ edit</button>
+                <button class="ibtn red" style="font-size:11px" onclick="App.deleteDayNote('${trip.id}',${di})">✕ remove</button>
+              </div>`:''}
+            </div>
           </div>`).join('');
     }
 
@@ -1769,7 +1792,50 @@ Be specific with colors and styles. Only include clearly visible items.`,
     if(label)label.className='check-label'+(checked?' done':'');
     if(pct===100&&total>0)setTimeout(()=>this.toast('🎉 All packed! Have a great trip!'),200);
   },
-  togglePackedItem(tripId,itemId,checked){
+  toggleDayNotes(tripId,dayIdx){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    const day=trip.packingList[dayIdx];
+    if(day.notes){
+      // Already has notes — toggle edit mode
+      this.editDayNote(tripId,dayIdx);return;
+    }
+    day._notesOpen=!day._notesOpen;
+    this.save(d);this.rPacking();
+  },
+  _draftDayNote(tripId,dayIdx,val){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    trip.packingList[dayIdx]._notesDraft=val;
+    this.save(d);
+  },
+  saveDayNote(tripId,dayIdx){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    const day=trip.packingList[dayIdx];
+    const val=(day._notesDraft||'').trim();
+    if(!val){this.toast('Please enter a note.');return;}
+    day.notes=val;
+    delete day._notesOpen;delete day._notesDraft;
+    this.save(d);this.rPacking();
+  },
+  editDayNote(tripId,dayIdx){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    const day=trip.packingList[dayIdx];
+    day._notesDraft=day.notes||'';
+    day._notesOpen=true;
+    delete day.notes;
+    this.save(d);this.rPacking();
+  },
+  cancelDayNote(tripId,dayIdx){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    const day=trip.packingList[dayIdx];
+    delete day._notesOpen;delete day._notesDraft;
+    this.save(d);this.rPacking();
+  },
+  deleteDayNote(tripId,dayIdx){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    const day=trip.packingList[dayIdx];
+    delete day.notes;delete day._notesOpen;delete day._notesDraft;
+    this.save(d);this.rPacking();
+  },
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
     // Mark this item as packed/unpacked across all outfits that contain it
     (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
