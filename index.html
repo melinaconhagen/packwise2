@@ -1522,8 +1522,14 @@ Be specific with colors and styles. Only include clearly visible items.`,
     const bags=trip.bags||[{id:'b0',name:'Bag 1',l:22,w:14,h:9}];
     const bagCapHtml=bags.map((bag,bi)=>{
       const volIn=bag.l*bag.w*bag.h;
-      const bagOutfitCount=(trip.packingList||[]).reduce((a,day)=>a+(day.outfits||[]).filter(o=>(o.bagIdx||0)===bi).length,0);
-      const usedIn=bagOutfitCount*91;
+      // Count UNIQUE items across entire trip (each physical item packed once)
+      const uniqueItemIds=new Set();
+      (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
+        (o.closetItems||[]).forEach(ci=>uniqueItemIds.add(ci.id));
+        (o.customItems||[]).forEach((c,i)=>uniqueItemIds.add('custom-'+c+i));
+      }));
+      const uniqueCount=uniqueItemIds.size;
+      const usedIn=uniqueCount*91;
       const pct=Math.min(100,Math.round(usedIn/volIn*100));
       const barCls=pct>90?'over':pct>70?'warn':'';
       return `<div class="bag-row">
@@ -1531,7 +1537,7 @@ Be specific with colors and styles. Only include clearly visible items.`,
         <div class="bag-bar-wrap">
           <div class="bag-bar-label">${bag.name} · ${bag.l}"×${bag.w}"×${bag.h}" · ${volL(bag.l,bag.w,bag.h)}L</div>
           <div class="cap-bar"><div class="cap-fill ${barCls}" style="width:${pct}%"></div></div>
-          <div class="cap-text">${pct}% full · ~${bagOutfitCount} item${bagOutfitCount!==1?'s':''}</div>
+          <div class="cap-text">${pct}% full · ${uniqueCount} unique item${uniqueCount!==1?'s':''}</div>
         </div>
         <button class="ibtn" onclick="App.openEditBag('${trip.id}',${bi})" title="Edit bag dimensions">✏️</button>
         <button class="ibtn" onclick="App.swapBag('${trip.id}',${bi})" title="Swap bag">🔄</button>
@@ -1581,39 +1587,95 @@ Be specific with colors and styles. Only include clearly visible items.`,
         <div style="margin-top:10px"><button class="btn-o" onclick="App.initBlank('${trip.id}')">Start blank</button></div>
       </div>`;
     } else if(this._packingMode==='checklist'){
-      // ── CHECKLIST MODE ──
-      const allOutfits=(trip.packingList||[]).flatMap(day=>(day.outfits||[]).map(o=>o));
-      const totalItems=allOutfits.length;
-      const packedItems=allOutfits.filter(o=>o.packed).length;
-      const pct=totalItems>0?Math.round(packedItems/totalItems*100):0;
+      // ── CHECKLIST MODE — unique items only ──
+      // Build a map of unique items across the whole trip
+      const uniqueItems=new Map(); // id → {item, days:[], packed}
+      const customItems=new Map(); // name → {days:[], packed}
+
+      (trip.packingList||[]).forEach(day=>{
+        (day.outfits||[]).forEach(o=>{
+          (o.closetItems||[]).forEach(ci=>{
+            if(!uniqueItems.has(ci.id)){
+              uniqueItems.set(ci.id,{
+                id:ci.id,name:ci.name,emoji:ci.emoji,image:ci.image,
+                days:[],packed:o.packedItems?.[ci.id]||false
+              });
+            }
+            uniqueItems.get(ci.id).days.push(day.day);
+          });
+          (o.customItems||[]).forEach(c=>{
+            if(!customItems.has(c)){
+              customItems.set(c,{name:c,days:[],packed:o.packedCustom?.[c]||false});
+            }
+            customItems.get(c).days.push(day.day);
+          });
+        });
+      });
+
+      const totalUnique=uniqueItems.size+customItems.size;
+      const packedUnique=[...uniqueItems.values(),...customItems.values()].filter(i=>i.packed).length;
+      const pct=totalUnique>0?Math.round(packedUnique/totalUnique*100):0;
+
       const progressBar=`<div class="checklist-progress">
         <div style="font-size:13px;font-weight:600;color:var(--text2)">Packing progress</div>
         <div class="cp-bar"><div class="cp-bar-fill" id="cp-fill" style="width:${pct}%"></div></div>
         <div class="cp-pct" id="cp-pct">${pct}%</div>
-        <div style="font-size:12px;color:var(--text3)" id="cp-count">${packedItems}/${totalItems}</div>
+        <div style="font-size:12px;color:var(--text3)" id="cp-count">${packedUnique}/${totalUnique} items</div>
       </div>`;
-      const checkRows=(trip.packingList||[]).map(day=>{
-        const outfits=day.outfits||[];
-        if(!outfits.length) return '';
-        const dayPacked=outfits.filter(o=>o.packed).length;
-        return `<div class="check-day-head">Day ${day.day}${day.weather?' — '+day.weather:''}
-          <span style="font-size:11px;font-weight:400;color:var(--text3)">${dayPacked}/${outfits.length} packed</span>
-        </div>
-        ${outfits.map((o,oi)=>{
-          const closetNames=(o.closetItems||[]).map(c=>c.name).join(', ');
-          const customNames=(o.customItems||[]).join(', ');
-          const detail=[closetNames,customNames].filter(Boolean).join(' + ');
-          const isEMPOutfit=o.emoji?.startsWith('EMP:');
-          const emojiDisplay=isEMPOutfit?EMP.renderEmoji(o.emoji,'1rem'):o.emoji||'👗';
-          const label=`${emojiDisplay} ${o.name}${detail?' ('+detail+')':''}`;
-          const dirty=(o.closetItems||[]).some(ci=>d.laundry.includes(ci.id));
-          return `<div class="check-item-row">
-            <input type="checkbox" class="check-box" ${o.packed?'checked':''} onchange="App.togglePacked('${trip.id}',${day.day},${oi},this.checked)" id="ck-${day.day}-${oi}">
-            <label class="check-label${o.packed?' done':''}" for="ck-${day.day}-${oi}">${label}${dirty?' <span style="font-size:10px;color:var(--pink-dark)">🧺 wash first</span>':''}</label>
+
+      // Group by clothing type for cleaner checklist
+      const byType=new Map();
+      [...uniqueItems.values()].forEach(item=>{
+        const closetItem=d.closet.find(c=>c.id===item.id);
+        const type=closetItem?.type||'other';
+        if(!byType.has(type))byType.set(type,[]);
+        byType.get(type).push({...item,closetItem});
+      });
+
+      let checkRows='';
+      byType.forEach((items,type)=>{
+        checkRows+=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin:12px 0 6px;padding-top:8px;border-top:1px solid var(--border)">${type}</div>`;
+        items.forEach(item=>{
+          const dirty=d.laundry.includes(item.id);
+          const uniqueDays=[...new Set(item.days)].sort((a,b)=>a-b);
+          const dayLabel=uniqueDays.length===1?`Day ${uniqueDays[0]}`:`Days ${uniqueDays.join(', ')}`;
+          const isEMP=item.emoji?.startsWith('EMP:');
+          const thumb=item.image
+            ?`<img src="${item.image}" style="width:18px;height:18px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px">`
+            :isEMP?`<span style="vertical-align:middle;margin-right:2px">${EMP.renderEmoji(item.emoji,'1rem')}</span>`
+            :`<span style="vertical-align:middle;margin-right:2px">${item.emoji||'👕'}</span>`;
+          const ckId=`ck-u-${item.id}`;
+          checkRows+=`<div class="check-item-row">
+            <input type="checkbox" class="check-box" ${item.packed?'checked':''} onchange="App.togglePackedItem('${trip.id}','${item.id}',this.checked)" id="${ckId}">
+            <label class="check-label${item.packed?' done':''}" for="${ckId}">
+              ${thumb}${item.name}
+              <span style="font-size:11px;color:var(--text3);margin-left:6px">${dayLabel}${uniqueDays.length>1?` · worn ${uniqueDays.length}×`:''}</span>
+              ${dirty?'<span style="font-size:10px;color:var(--pink-dark);margin-left:4px">🧺 wash first</span>':''}
+            </label>
           </div>`;
-        }).join('')}`;
-      }).join('');
-      listHtml=progressBar+checkRows+`<div style="margin-top:1rem">
+        });
+      });
+
+      // Custom items
+      if(customItems.size){
+        checkRows+=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin:12px 0 6px;padding-top:8px;border-top:1px solid var(--border)">Other</div>`;
+        customItems.forEach((item,name)=>{
+          const uniqueDays=[...new Set(item.days)].sort((a,b)=>a-b);
+          const dayLabel=uniqueDays.length===1?`Day ${uniqueDays[0]}`:`Days ${uniqueDays.join(', ')}`;
+          const ckId=`ck-c-${name.replace(/\s/g,'-')}`;
+          checkRows+=`<div class="check-item-row">
+            <input type="checkbox" class="check-box" ${item.packed?'checked':''} onchange="App.togglePackedCustom('${trip.id}','${name.replace(/'/g,"\\'")}',this.checked)" id="${ckId}">
+            <label class="check-label${item.packed?' done':''}" for="${ckId}">
+              ✏️ ${name}
+              <span style="font-size:11px;color:var(--text3);margin-left:6px">${dayLabel}</span>
+            </label>
+          </div>`;
+        });
+      }
+
+      listHtml=progressBar+`<div style="font-size:13px;color:var(--text2);margin-bottom:12px;background:var(--pink-pale);border-radius:8px;padding:8px 12px">
+        📦 <strong>${totalUnique} unique item${totalUnique!==1?'s':''} to pack</strong> — items worn multiple days appear once
+      </div>`+checkRows+`<div style="margin-top:1rem">
         <button class="btn-o btn-sm" onclick="App.resetPacked('${trip.id}')">↺ Reset all checkboxes</button>
       </div>`;
     } else {
@@ -1707,9 +1769,62 @@ Be specific with colors and styles. Only include clearly visible items.`,
     if(label)label.className='check-label'+(checked?' done':'');
     if(pct===100&&total>0)setTimeout(()=>this.toast('🎉 All packed! Have a great trip!'),200);
   },
+  togglePackedItem(tripId,itemId,checked){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    // Mark this item as packed/unpacked across all outfits that contain it
+    (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
+      if((o.closetItems||[]).some(ci=>ci.id===itemId)){
+        if(!o.packedItems)o.packedItems={};
+        o.packedItems[itemId]=checked;
+      }
+    }));
+    this.save(d);
+    this._updateChecklistProgress(trip);
+    const label=document.querySelector(`label[for="ck-u-${itemId}"]`);
+    if(label)label.className='check-label'+(checked?' done':'');
+  },
+
+  togglePackedCustom(tripId,name,checked){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
+      if((o.customItems||[]).includes(name)){
+        if(!o.packedCustom)o.packedCustom={};
+        o.packedCustom[name]=checked;
+      }
+    }));
+    this.save(d);
+    this._updateChecklistProgress(trip);
+  },
+
+  _updateChecklistProgress(trip){
+    const d=this.data();
+    const uniqueItems=new Map();
+    const customItems=new Map();
+    (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
+      (o.closetItems||[]).forEach(ci=>{
+        if(!uniqueItems.has(ci.id))uniqueItems.set(ci.id,{packed:o.packedItems?.[ci.id]||false});
+      });
+      (o.customItems||[]).forEach(c=>{
+        if(!customItems.has(c))customItems.set(c,{packed:o.packedCustom?.[c]||false});
+      });
+    }));
+    const total=uniqueItems.size+customItems.size;
+    const packed=[...uniqueItems.values(),...customItems.values()].filter(i=>i.packed).length;
+    const pct=total>0?Math.round(packed/total*100):0;
+    const fillEl=document.getElementById('cp-fill');
+    const pctEl=document.getElementById('cp-pct');
+    const countEl=document.getElementById('cp-count');
+    if(fillEl)fillEl.style.width=pct+'%';
+    if(pctEl)pctEl.textContent=pct+'%';
+    if(countEl)countEl.textContent=packed+'/'+total+' items';
+    if(pct===100&&total>0)setTimeout(()=>this.toast('🎉 All packed! Have a great trip!'),200);
+  },
+
   resetPacked(tripId){
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
-    (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{delete o.packed;}));
+    (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
+      delete o.packed;delete o.packedItems;delete o.packedCustom;
+    }));
     this.save(d);this.rPacking();this.toast('Checklist reset ↺');
   },
 
