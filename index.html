@@ -1627,9 +1627,10 @@ Be specific with colors and styles. Only include clearly visible items.`,
           <div class="day-card">
             <div class="day-head">
               <div class="day-title">Day ${day.day}${day.weather?`<span class="day-wx">${day.weather}</span>`:''}</div>
-              <div style="display:flex;gap:5px">
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
                 <button class="add-outfit-btn" onclick="App.openAddSavedOutfit('${trip.id}',${di})">+ Saved outfit</button>
-                <button class="add-outfit-btn" onclick="App.openAddOutfit('${trip.id}',${di})">+ Items</button>
+                <button class="add-outfit-btn" onclick="App.openAddOutfit('${trip.id}',${di})">+ New outfit</button>
+                <button class="add-outfit-btn" onclick="App.openAddSingleItem('${trip.id}',${di})">+ Single item</button>
               </div>
             </div>
             ${(day.outfits||[]).map((o,oi)=>{
@@ -1896,27 +1897,39 @@ Respond ONLY with JSON (no markdown):
     }
     this._outfitTripId=tripId;this._outfitDayIdx=dayIdx;
     const trip=d.trips.find(t=>t.id===tripId);
-    // Build a modal-style picker for saved outfits
     const listHtml=groups.map(og=>{
+      // Get first closet item for the lead icon
+      const firstCi=og.closetItems?.[0];
+      const firstItem=firstCi?d.closet.find(c=>c.id===(firstCi.id||firstCi)):null;
+      const leadEmoji=firstItem?.emoji||firstCi?.emoji||'👗';
+      const isEMPLead=leadEmoji?.startsWith('EMP:');
+      const leadThumb=firstItem?.image
+        ?`<img src="${firstItem.image}" style="width:32px;height:32px;border-radius:6px;object-fit:cover">`
+        :isEMPLead?`<span style="font-size:1.6rem">${EMP.renderEmoji(leadEmoji,'1.6rem')}</span>`
+        :`<span style="font-size:1.6rem">${leadEmoji}</span>`;
+
       const items=(og.closetItems||[]).map(ci=>{
         const closetItem=d.closet.find(c=>c.id===(ci.id||ci));
-        const isEMP=closetItem?.emoji?.startsWith('EMP:');
-        const thumb=closetItem?.image?`<img src="${closetItem.image}" style="width:20px;height:20px;border-radius:4px;object-fit:cover">`
-          :isEMP?EMP.renderEmoji(closetItem.emoji,'1rem')
-          :`<span style="font-size:.9rem">${closetItem?.emoji||ci.emoji||'👕'}</span>`;
-        return `<span class="ob-chip" style="font-size:11px">${thumb} ${closetItem?.name||ci.name||ci}</span>`;
+        const emo=closetItem?.emoji||ci?.emoji||'👕';
+        const isEMP=emo?.startsWith('EMP:');
+        const thumb=closetItem?.image
+          ?`<img src="${closetItem.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover">`
+          :isEMP?EMP.renderEmoji(emo,'1rem')
+          :`<span style="font-size:.85rem">${emo}</span>`;
+        return `<span class="ob-chip" style="font-size:11px">${thumb} ${closetItem?.name||ci?.name||ci}</span>`;
       }).join('');
-      return `<div class="cp-item" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;max-width:100%;box-sizing:border-box" onclick="App._addSavedOutfitToDay('${og.id}')">
-        <div style="font-size:1.4rem;flex-shrink:0">${og.closetItems?.[0]?.emoji||'👗'}</div>
+
+      return `<button style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);cursor:pointer;transition:.15s;font-family:inherit" onmouseover="this.style.borderColor='var(--pink)';this.style.background='var(--pink-pale)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)'" onclick="App._addSavedOutfitToDay('${og.id}')">
+        <div style="flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center">${leadThumb}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:13px;color:var(--text)">${og.name}</div>
-          <div style="font-size:11px;color:var(--text3)">${og.group||'Uncategorized'}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${items}</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${og.group||'Uncategorized'}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${items}</div>
         </div>
-        <div style="font-size:18px;color:var(--pink-dark);flex-shrink:0">→</div>
-      </div>`;
+        <div style="color:var(--pink-dark);font-size:16px;flex-shrink:0">→</div>
+      </button>`;
     }).join('');
-    // Show in a simple modal
+
     const existing=document.getElementById('m-savedoutfit');
     if(existing)existing.remove();
     const modal=document.createElement('div');
@@ -1925,10 +1938,77 @@ Respond ONLY with JSON (no markdown):
     modal.innerHTML=`<div class="modal" style="max-width:480px">
       <div class="mhead"><div class="mtitle">Add Saved Outfit</div><button class="mclose" onclick="document.getElementById('m-savedoutfit').remove()">×</button></div>
       <div class="msub">Adding to Day ${trip.packingList[dayIdx].day} — ${trip.destination}</div>
-      <div style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;padding:2px">${listHtml}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;padding:2px">${listHtml}</div>
       <div class="mactions"><button class="btn-o" onclick="document.getElementById('m-savedoutfit').remove()">Cancel</button></div>
     </div>`;
     document.body.appendChild(modal);
+  },
+
+  openAddSingleItem(tripId,dayIdx){
+    const d=this.data();
+    this._outfitTripId=tripId;this._outfitDayIdx=dayIdx;
+    const trip=d.trips.find(t=>t.id===tripId);
+    if(!d.closet.length){this.toast('Your closet is empty — add items first!');return;}
+    const existing=document.getElementById('m-singleitem');
+    if(existing)existing.remove();
+    const types=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear'];
+    const filterBtns=types.map(t=>`<button class="cp-fchip${t==='all'?' active':''}" onclick="App._filterSinglePicker('${t}')">${t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
+    const modal=document.createElement('div');
+    modal.id='m-singleitem';
+    modal.className='modal-backdrop';
+    modal.innerHTML=`<div class="modal" style="max-width:480px">
+      <div class="mhead"><div class="mtitle">Add Single Item</div><button class="mclose" onclick="document.getElementById('m-singleitem').remove()">×</button></div>
+      <div class="msub">Adding to Day ${trip.packingList[dayIdx].day} — ${trip.destination}</div>
+      <div class="cp-filter" id="si-filter">${filterBtns}</div>
+      <div class="closet-picker" id="si-picker"></div>
+      <div class="mactions"><button class="btn-o" onclick="document.getElementById('m-singleitem').remove()">Cancel</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+    this._renderSinglePicker('all');
+  },
+
+  _filterSinglePicker(type){
+    document.querySelectorAll('#si-filter .cp-fchip').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===type||(type==='all'&&b.textContent==='All')));
+    this._renderSinglePicker(type);
+  },
+
+  _renderSinglePicker(filter){
+    const d=this.data();
+    const el=document.getElementById('si-picker');if(!el)return;
+    const items=filter==='all'?d.closet:d.closet.filter(c=>c.type===filter);
+    el.innerHTML=items.map(c=>{
+      const dirty=d.laundry.includes(c.id);
+      const isEMP=c.emoji?.startsWith('EMP:');
+      const thumb=c.image
+        ?`<img class="cp-img" src="${c.image}">`
+        :isEMP?`<div style="width:44px;height:44px;margin:0 auto 3px;display:flex;align-items:center;justify-content:center">${EMP.renderEmoji(c.emoji,'1.5rem')}</div>`
+        :`<div class="cp-emo">${c.emoji||'👕'}</div>`;
+      return `<div class="cp-item${dirty?' dirty-item':''}" onclick="App._addSingleItemToDay('${c.id}')" title="${c.name}${dirty?' (🧺 dirty — wash before trip)':''}">
+        ${thumb}
+        <div class="cp-name">${c.name}</div>
+        ${dirty?`<div style="font-size:9px;color:var(--pink-dark);margin-top:2px">🧺 dirty</div>`:''}
+      </div>`;
+    }).join('');
+  },
+
+  _addSingleItemToDay(itemId){
+    const d=this.data();
+    const item=d.closet.find(c=>c.id===itemId);if(!item)return;
+    const trip=d.trips.find(t=>t.id===this._outfitTripId);
+    const dirty=d.laundry.includes(itemId);
+    trip.packingList[this._outfitDayIdx].outfits.push({
+      id:'o'+Date.now(),
+      name:item.name,
+      emoji:item.emoji||'👕',
+      closetItems:[{id:item.id,name:item.name,emoji:item.emoji,image:item.image}],
+      customItems:[],
+      occasion:'single'
+    });
+    this.save(d);
+    document.getElementById('m-singleitem')?.remove();
+    const dirtyNote=dirty?' (🧺 remember to wash before the trip!)':'';
+    this.toast(`Added ${item.name}!${dirtyNote}`);
+    this.rPacking();
   },
 
   _addSavedOutfitToDay(ogId){
