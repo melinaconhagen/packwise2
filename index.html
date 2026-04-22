@@ -1305,10 +1305,10 @@ ${hasText?'Order text:\n'+txt:''}`;
         items=JSON.parse(raw.replace(/```json|```/g,'').trim());
       } else {
         btn.textContent='Reading order…';
-        const raw=await callAI(`Extract all clothing items from this text. For each item return name, type, emoji, and estimated packed/folded dimensions in inches.
-Return ONLY a JSON array, no markdown: [{"name":"White Nike Air Force 1","type":"shoes","emoji":"👟","dimL":12,"dimW":8,"dimH":5},...]
+        const raw=await callAI(`Extract all clothing items from this text. For each item return name, type, emoji, and tightly packed dimensions in inches.
+Return ONLY a JSON array, no markdown: [{"name":"White Nike Air Force 1","type":"shoes","emoji":"👟","dimL":12,"dimW":7,"dimH":4},...]
 Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear,toiletries
-Use realistic packed dims: folded jeans≈12×10×2, t-shirt≈10×8×1, dress≈14×10×2, sneakers≈12×8×5, jacket≈14×12×3
+Measure tightly folded/packed — err conservative (smaller). Reference: t-shirt≈7×5×1, jeans≈10×7×1.5, shorts≈7×6×1, dress≈10×7×1.5, sweater≈10×7×2, jacket≈12×9×2, puffer≈10×8×3, sneakers≈12×7×4, heels≈10×6×3, boots≈12×7×5, bikini≈5×4×0.5
 Text: ${txt}`,1200);
         items=JSON.parse(raw.replace(/```json|```/g,'').trim());
       }
@@ -1531,10 +1531,25 @@ Be specific with colors and styles. Only include clearly visible items.`,
 
   async _aiEstimateDims(name,type){
     try{
-      const raw=await callAI(`Estimate the packed/folded dimensions in inches for this clothing item: "${name}" (type: ${type}).
-Think about how it would be folded and packed in a suitcase.
-Respond ONLY with JSON, no markdown: {"l":12,"w":10,"h":2,"note":"folded jeans"}
-Use realistic values — e.g. folded jeans ≈ 12×10×2, t-shirt ≈ 10×8×1, dress ≈ 14×10×2, shoes ≈ 12×8×5, jacket ≈ 14×12×3`,300);
+      const raw=await callAI(`Estimate the tightly packed/folded dimensions in inches for this clothing item: "${name}" (type: ${type}).
+Measure as if folded as small as possible and packed tightly in a suitcase — NOT laid flat.
+Be conservative — err on the smaller side. Most items pack smaller than people expect.
+Reference values when tightly folded:
+- T-shirt/tank top ≈ 7×5×1
+- Long sleeve shirt ≈ 8×6×1
+- Jeans/trousers ≈ 10×7×1.5
+- Shorts ≈ 7×6×1
+- Dress (casual) ≈ 10×7×1.5
+- Dress (formal/maxi) ≈ 12×8×2
+- Sweater/hoodie ≈ 10×7×2
+- Jacket/blazer ≈ 12×9×2
+- Puffer jacket ≈ 10×8×3
+- Sneakers (pair) ≈ 12×7×4
+- Heels/flats (pair) ≈ 10×6×3
+- Boots (pair) ≈ 12×7×5
+- Bikini/underwear ≈ 5×4×0.5
+- Socks (pair) ≈ 4×3×0.5
+Respond ONLY with JSON, no markdown: {"l":7,"w":5,"h":1,"note":"tightly folded t-shirt"}`,300);
       return JSON.parse(raw.replace(/```json|```/g,'').trim());
     }catch(e){return null;}
   },
