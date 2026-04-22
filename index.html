@@ -683,6 +683,16 @@ select.finput{cursor:pointer}
   <input type="file" id="ei-img-file" accept="image/*" style="display:none" onchange="App.handleItemPhoto(this,'ei-img-preview','ei-img-drop-label','ei-img-b64')">
   <input type="hidden" id="ei-img-b64">
   <div id="ei-img-preview" style="margin-top:6px"></div>
+  <label class="flabel" style="margin-top:1rem">Packed dimensions (inches) <span style="font-weight:400;text-transform:none;color:var(--text3)" id="ei-dim-note">— AI estimates these automatically for clothing</span></label>
+  <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+   <div style="flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">L</div><input class="finput" type="number" id="ei-dim-l" placeholder="e.g. 12" style="padding:9px 10px" step="0.5"></div>
+   <span style="color:var(--text3);padding-top:14px">×</span>
+   <div style="flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">W</div><input class="finput" type="number" id="ei-dim-w" placeholder="e.g. 10" style="padding:9px 10px" step="0.5"></div>
+   <span style="color:var(--text3);padding-top:14px">×</span>
+   <div style="flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">H</div><input class="finput" type="number" id="ei-dim-h" placeholder="e.g. 2" style="padding:9px 10px" step="0.5"></div>
+   <div style="padding-top:14px;font-size:12px;color:var(--text3);white-space:nowrap" id="ei-dim-vol"></div>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-top:4px" id="ei-dim-ai-status"></div>
   <label class="flabel" style="margin-top:1rem">Icon — pick item then color <span style="font-weight:400;text-transform:none;color:var(--text3)">(used if no photo)</span></label>
   <div id="ei-emp-picker"></div>
   <input type="hidden" id="ei-emo-val">
@@ -1184,9 +1194,18 @@ const App={
       const imgB64=(document.getElementById('c-img-b64')?.value||'').trim();
       const iconVal=document.getElementById('c-emo-val').value||EMP.getValue('c-emp-picker')||'👕';
       if(!name){this.toast('Please enter a name.');return;}
-      d.closet.push({id:'c'+Date.now(),name,type,emoji:imgB64?null:iconVal,image:imgB64||null});
+      const newItem={id:'c'+Date.now(),name,type,emoji:imgB64?null:iconVal,image:imgB64||null};
+      d.closet.push(newItem);
       closeM('m-cloth');
       this.toast(`${name} added!`);
+      // Silently estimate dims in background for non-toiletry items
+      if(type!=='toiletries'){
+        App._aiEstimateDims(name,type).then(dims=>{
+          if(!dims)return;
+          const d2=App.data();const it=d2.closet.find(c=>c.id===newItem.id);
+          if(it&&!it.dimL){it.dimL=dims.l;it.dimW=dims.w;it.dimH=dims.h;App.save(d2);}
+        }).catch(()=>{});
+      }
     }
     this.save(d);
     if(this.view==='closet')this.rCloset();
@@ -1286,10 +1305,11 @@ ${hasText?'Order text:\n'+txt:''}`;
         items=JSON.parse(raw.replace(/```json|```/g,'').trim());
       } else {
         btn.textContent='Reading order…';
-        const raw=await callAI(`Extract all clothing items from this text. Return name, type, emoji.
-Return ONLY a JSON array, no markdown: [{"name":"White Nike Air Force 1","type":"shoes","emoji":"👟"},...]
-Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear
-Text: ${txt}`,1000);
+        const raw=await callAI(`Extract all clothing items from this text. For each item return name, type, emoji, and estimated packed/folded dimensions in inches.
+Return ONLY a JSON array, no markdown: [{"name":"White Nike Air Force 1","type":"shoes","emoji":"👟","dimL":12,"dimW":8,"dimH":5},...]
+Types: tops,bottoms,dresses,outerwear,shoes,accessories,swimwear,activewear,underwear,sleepwear,toiletries
+Use realistic packed dims: folded jeans≈12×10×2, t-shirt≈10×8×1, dress≈14×10×2, sneakers≈12×8×5, jacket≈14×12×3
+Text: ${txt}`,1200);
         items=JSON.parse(raw.replace(/```json|```/g,'').trim());
       }
 
@@ -1308,7 +1328,8 @@ Text: ${txt}`,1000);
           id:'c'+Date.now()+Math.random().toString(36).slice(2),
           name:it.name,type:it.type||'tops',
           emoji:it.image?null:(it.emoji||'👕'),
-          image:it.image||null
+          image:it.image||null,
+          dimL:it.dimL||null,dimW:it.dimW||null,dimH:it.dimH||null
         });
       });
       this.save(d);closeM('m-import');this.impClear();
@@ -1467,20 +1488,73 @@ Be specific with colors and styles. Only include clearly visible items.`,
       preview.innerHTML='';
       if(label)label.style.display='';
     }
+    // Populate dimensions
+    const isTech=item.type==='toiletries';
+    document.getElementById('ei-dim-l').value=item.dimL||'';
+    document.getElementById('ei-dim-w').value=item.dimW||'';
+    document.getElementById('ei-dim-h').value=item.dimH||'';
+    document.getElementById('ei-dim-note').textContent=isTech?'— enter your device dimensions manually':'— AI estimates these automatically for clothing';
+    this._updateDimVol();
+    // Add live volume calc
+    ['ei-dim-l','ei-dim-w','ei-dim-h'].forEach(id=>{
+      document.getElementById(id).oninput=()=>App._updateDimVol();
+    });
+    // If no dims yet and not toiletries, fetch AI estimate in background
+    if(!item.dimL&&!isTech){
+      const status=document.getElementById('ei-dim-ai-status');
+      if(status)status.textContent='⏳ Estimating packed size…';
+      App._aiEstimateDims(item.name,item.type).then(dims=>{
+        if(dims&&!document.getElementById('ei-dim-l').value){
+          document.getElementById('ei-dim-l').value=dims.l;
+          document.getElementById('ei-dim-w').value=dims.w;
+          document.getElementById('ei-dim-h').value=dims.h;
+          App._updateDimVol();
+          if(status)status.textContent=`✓ AI estimated: ${dims.l}"×${dims.w}"×${dims.h}" packed — adjust if needed`;
+        }
+      }).catch(()=>{if(status)status.textContent='';});
+    } else if(item.dimL){
+      const status=document.getElementById('ei-dim-ai-status');
+      if(status)status.textContent=`Saved dimensions — edit to update`;
+    }
     EMP.init('ei-emp-picker','ei-emo-val',item.type||'tops',item.emoji||'👕');
     document.getElementById('m-edititem').classList.remove('hidden');
     setTimeout(()=>document.getElementById('ei-name').focus(),100);
   },
+
+  _updateDimVol(){
+    const l=+document.getElementById('ei-dim-l')?.value||0;
+    const w=+document.getElementById('ei-dim-w')?.value||0;
+    const h=+document.getElementById('ei-dim-h')?.value||0;
+    const el=document.getElementById('ei-dim-vol');
+    if(el)el.textContent=l&&w&&h?`=${volL(l,w,h)}L`:'';
+  },
+
+  async _aiEstimateDims(name,type){
+    try{
+      const raw=await callAI(`Estimate the packed/folded dimensions in inches for this clothing item: "${name}" (type: ${type}).
+Think about how it would be folded and packed in a suitcase.
+Respond ONLY with JSON, no markdown: {"l":12,"w":10,"h":2,"note":"folded jeans"}
+Use realistic values — e.g. folded jeans ≈ 12×10×2, t-shirt ≈ 10×8×1, dress ≈ 14×10×2, shoes ≈ 12×8×5, jacket ≈ 14×12×3`,300);
+      return JSON.parse(raw.replace(/```json|```/g,'').trim());
+    }catch(e){return null;}
+  },
+
   saveEditItem(){
     const newName=document.getElementById('ei-name').value.trim();
     const newIcon=document.getElementById('ei-emo-val').value||EMP.getValue('ei-emp-picker')||'👕';
     const newImgB64=(document.getElementById('ei-img-b64')?.value||'').trim();
+    const dimL=parseFloat(document.getElementById('ei-dim-l')?.value)||null;
+    const dimW=parseFloat(document.getElementById('ei-dim-w')?.value)||null;
+    const dimH=parseFloat(document.getElementById('ei-dim-h')?.value)||null;
     if(!newName){this.toast('Please enter a name.');return;}
     const d=this.data();const item=d.closet.find(c=>c.id===this._sheetId);
     if(item){
       item.name=newName;
       item.image=newImgB64||null;
       item.emoji=newImgB64?null:(newIcon||item.emoji);
+      if(dimL)item.dimL=dimL; else delete item.dimL;
+      if(dimW)item.dimW=dimW; else delete item.dimW;
+      if(dimH)item.dimH=dimH; else delete item.dimH;
     }
     this.save(d);closeM('m-edititem');this.toast('Updated!');
     if(this.view==='closet')this.rCloset();if(this.view==='laundry')this.rLaundry();
@@ -1523,22 +1597,38 @@ Be specific with colors and styles. Only include clearly visible items.`,
     const bags=trip.bags||[{id:'b0',name:'Bag 1',l:22,w:14,h:9}];
     const bagCapHtml=bags.map((bag,bi)=>{
       const volIn=bag.l*bag.w*bag.h;
-      // Count UNIQUE items across entire trip (each physical item packed once)
+      // Collect unique items and sum their actual packed volumes
       const uniqueItemIds=new Set();
+      let usedIn=0;
       (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
-        (o.closetItems||[]).forEach(ci=>uniqueItemIds.add(ci.id));
-        (o.customItems||[]).forEach((c,i)=>uniqueItemIds.add('custom-'+c+i));
+        (o.closetItems||[]).forEach(ci=>{
+          if(!uniqueItemIds.has(ci.id)){
+            uniqueItemIds.add(ci.id);
+            // Use real dims if available, otherwise fallback to 91 cubic inches
+            const closetItem=d.closet.find(c=>c.id===ci.id);
+            if(closetItem?.dimL&&closetItem?.dimW&&closetItem?.dimH){
+              usedIn+=closetItem.dimL*closetItem.dimW*closetItem.dimH;
+            } else {
+              usedIn+=91;
+            }
+          }
+        });
+        (o.customItems||[]).forEach((c,i)=>{
+          const key='custom-'+c+i;
+          if(!uniqueItemIds.has(key)){uniqueItemIds.add(key);usedIn+=91;}
+        });
       }));
       const uniqueCount=uniqueItemIds.size;
-      const usedIn=uniqueCount*91;
+      const dimsKnown=d.closet.filter(c=>uniqueItemIds.has(c.id)&&c.dimL).length;
       const pct=Math.min(100,Math.round(usedIn/volIn*100));
       const barCls=pct>90?'over':pct>70?'warn':'';
+      const dimNote=dimsKnown<uniqueCount?`<span style="font-size:10px;color:var(--text3)"> · ${dimsKnown}/${uniqueCount} items have exact dims</span>`:'';
       return `<div class="bag-row">
         <div style="font-size:1.1rem">🧳</div>
         <div class="bag-bar-wrap">
           <div class="bag-bar-label">${bag.name} · ${bag.l}"×${bag.w}"×${bag.h}" · ${volL(bag.l,bag.w,bag.h)}L</div>
           <div class="cap-bar"><div class="cap-fill ${barCls}" style="width:${pct}%"></div></div>
-          <div class="cap-text">${pct}% full · ${uniqueCount} unique item${uniqueCount!==1?'s':''}</div>
+          <div class="cap-text">${pct}% full · ${uniqueCount} item${uniqueCount!==1?'s':''}${dimNote}</div>
         </div>
         <button class="ibtn" onclick="App.openEditBag('${trip.id}',${bi})" title="Edit bag dimensions">✏️</button>
         <button class="ibtn" onclick="App.swapBag('${trip.id}',${bi})" title="Swap bag">🔄</button>
@@ -3439,6 +3529,39 @@ const EMP_ITEMS = {
       {id:'long-sleeve-m', e:'👕',  l:'Long Sleeve Tee'},
       {id:'necktie',       e:'👔',  l:'Necktie'},
     ]
+  },
+  toiletries: {
+    label: '🧴 Toiletries & Electronics',
+    noColor: true,
+    items: [
+      {id:'laptop',        e:'💻',  l:'Laptop',         noColor:true},
+      {id:'phone',         e:'📱',  l:'Phone',           noColor:true},
+      {id:'headphones',    e:'🎧',  l:'Headphones',      noColor:true},
+      {id:'camera',        e:'📷',  l:'Camera',          noColor:true},
+      {id:'charger',       e:'🔌',  l:'Charger',         noColor:true},
+      {id:'book',          e:'📚',  l:'Book',            noColor:true},
+      {id:'tablet',        e:'📓',  l:'Tablet/E-reader', noColor:true},
+      {id:'shampoo',       e:'🧴',  l:'Shampoo',         noColor:true},
+      {id:'conditioner',   e:'🫧',  l:'Conditioner',     noColor:true},
+      {id:'soap',          e:'🧼',  l:'Soap',            noColor:true},
+      {id:'toothbrush',    e:'🪥',  l:'Toothbrush',      noColor:true},
+      {id:'toothpaste',    e:'🧴',  l:'Toothpaste',      noColor:true},
+      {id:'medication',    e:'💊',  l:'Medication',      noColor:true},
+      {id:'vitamins',      e:'💉',  l:'Vitamins',        noColor:true},
+      {id:'makeup-bag',    e:'💄',  l:'Makeup Bag',      noColor:true},
+      {id:'perfume',       e:'🌸',  l:'Perfume',         noColor:true},
+      {id:'razor',         e:'🪒',  l:'Razor',           noColor:true},
+      {id:'sunscreen',     e:'🧴',  l:'Sunscreen',       noColor:true},
+      {id:'hairdryer',     e:'💨',  l:'Hair Dryer',      noColor:true},
+      {id:'glasses',       e:'👓',  l:'Glasses',         noColor:true},
+      {id:'contact-lens',  e:'🔬',  l:'Contact Lenses',  noColor:true},
+      {id:'first-aid',     e:'🩹',  l:'First Aid Kit',   noColor:true},
+      {id:'toiletry-bag',  e:'👝',  l:'Toiletry Bag',    noColor:true},
+      {id:'passport',      e:'🛂',  l:'Passport',        noColor:true},
+      {id:'wallet',        e:'👛',  l:'Wallet',          noColor:true},
+      {id:'keys',          e:'🔑',  l:'Keys',            noColor:true},
+      {id:'umbrella',      e:'☂️',  l:'Umbrella',        noColor:true},
+    ]
   }
 };
 
@@ -3475,13 +3598,18 @@ const EMP = {
 
   getValue(containerId) {
     const s = this._state[containerId];
-    if (!s || s.itemId === null || s.colorIdx === null) {
+    if (!s || s.itemId === null) {
       return s?.existingVal || '👕';
     }
     const item = this._findItem(s.itemId);
+    if (!item) return s?.existingVal || '👕';
+    // noColor items (toiletries/electronics) don't need a color pick — store as plain emoji
+    if (item.noColor) {
+      return item.e2 ? `${item.e}${item.e2}` : item.e;
+    }
+    if (s.colorIdx === null) return s?.existingVal || '👕';
     const col = EMP_COLORS[s.colorIdx];
-    if (!item || !col) return s?.existingVal || '👕';
-    // Format: EMP:primaryEmoji:e2orNONE:baseFilterorNONE:colorFilter:label
+    if (!col) return s?.existingVal || '👕';
     const e2 = item.e2 || 'NONE';
     const base = item.baseFilter || 'NONE';
     return `EMP:${item.e}:${e2}:${base}:${col.filter}:${col.n} ${item.l}`;
@@ -3500,8 +3628,14 @@ const EMP = {
     if (!s) return;
     s.itemId = itemId;
     s.colorIdx = null;
+    const item = this._findItem(itemId);
+    // noColor items skip the color step — auto-save immediately
+    if (item?.noColor) {
+      const val = this.getValue(containerId);
+      const hiddenEl = document.getElementById(hiddenInputId);
+      if (hiddenEl) hiddenEl.value = val;
+    }
     this._render(containerId, hiddenInputId);
-    // scroll color section into view
     setTimeout(() => {
       const el = document.getElementById(containerId + '-colors');
       if (el) el.scrollIntoView({behavior:'smooth', block:'nearest'});
@@ -3576,14 +3710,14 @@ const EMP = {
       gridHtml += `</div>`;
     }
 
-    // ── Step 2: Color swatches ──
+    // ── Step 2: Color swatches (skip for noColor items) ──
     let colorHtml = '';
-    if (s.itemId !== null) {
+    const selectedItem = s.itemId !== null ? EMP._findItem(s.itemId) : null;
+    if (s.itemId !== null && !selectedItem?.noColor) {
       colorHtml = `<div id="${containerId}-colors" class="emp-section-head" style="margin-top:12px;font-size:11px">Step 2 — choose a color</div>
       <div class="emp-colors emp-colors-panel" style="padding:6px 2px 8px">
         ${EMP_COLORS.map((col, i) => {
           const isSel = s.colorIdx === i;
-          // For light colors (white, beige, light pink, light blue) use dark checkmark
           const lightColors = ['#FFFFFF','#E8D5B0','#F4C0D1','#7FB5D5'];
           const isLight = lightColors.includes(col.hex);
           const border = isLight ? '2px solid #ccc' : `2px solid ${col.hex}`;
@@ -3599,7 +3733,18 @@ const EMP = {
 
     // ── Preview row ──
     let previewHtml = '';
-    if (s.itemId !== null && s.colorIdx !== null) {
+    if (s.itemId !== null && selectedItem?.noColor) {
+      // noColor items — show preview immediately after selection, no color needed
+      previewHtml = `<div class="emp-preview-row">
+        <div class="emp-preview-box">
+          <span style="font-size:2rem;line-height:1">${selectedItem.e}${selectedItem.e2||''}</span>
+        </div>
+        <div class="emp-preview-label">
+          <strong>${selectedItem.l}</strong>
+          Selected — click Add Item to save
+        </div>
+      </div>`;
+    } else if (s.itemId !== null && s.colorIdx !== null) {
       const item = this._findItem(s.itemId);
       const col = EMP_COLORS[s.colorIdx];
       previewHtml = `<div class="emp-preview-row">
@@ -3619,11 +3764,14 @@ const EMP = {
     }
 
     const step1done = s.itemId !== null;
-    const step2done = s.colorIdx !== null;
-    const stepsHtml = `<div class="emp-steps">
-      <div class="emp-step-lbl ${step1done ? 'done' : 'active'}">① Pick item${step1done ? ' ✓' : ''}</div>
-      <div class="emp-step-lbl ${step1done ? (step2done ? 'done' : 'active') : ''}">② Pick color${step2done ? ' ✓' : ''}</div>
-    </div>`;
+    const step2done = s.colorIdx !== null || selectedItem?.noColor;
+    // For noColor items, only show step 1
+    const stepsHtml = selectedItem?.noColor
+      ? `<div class="emp-steps"><div class="emp-step-lbl ${step1done?'done':'active'}">① Pick item${step1done?' ✓':''}</div><div class="emp-step-lbl done" style="opacity:.4">② No color needed ✓</div></div>`
+      : `<div class="emp-steps">
+          <div class="emp-step-lbl ${step1done ? 'done' : 'active'}">① Pick item${step1done ? ' ✓' : ''}</div>
+          <div class="emp-step-lbl ${step1done ? (step2done ? 'done' : 'active') : ''}">② Pick color${step2done ? ' ✓' : ''}</div>
+        </div>`;
 
     container.innerHTML = `<div class="emp-wrap">${stepsHtml}<div class="emp-body" style="max-height:300px;overflow-y:auto">${gridHtml}${colorHtml}</div>${previewHtml}</div>`;
   }
