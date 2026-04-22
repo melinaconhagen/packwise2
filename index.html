@@ -1529,6 +1529,108 @@ Be specific with colors and styles. Only include clearly visible items.`,
     if(el)el.textContent=l&&w&&h?`=${volL(l,w,h)}L`:'';
   },
 
+  async suggestRemovals(tripId,bagIdx){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    const bag=trip.bags[bagIdx];
+    const volIn=bag.l*bag.w*bag.h;
+
+    // Build list of unique packed items with their volumes
+    const uniqueItems=new Map();
+    (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
+      (o.closetItems||[]).forEach(ci=>{
+        if(!uniqueItems.has(ci.id)){
+          const closetItem=d.closet.find(c=>c.id===ci.id);
+          const itemVol=closetItem?.dimL&&closetItem?.dimW&&closetItem?.dimH
+            ?closetItem.dimL*closetItem.dimW*closetItem.dimH:91;
+          uniqueItems.set(ci.id,{
+            id:ci.id,name:ci.name,type:closetItem?.type||'unknown',
+            vol:itemVol,days:[],emoji:ci.emoji
+          });
+        }
+        uniqueItems.get(ci.id).days.push(day.day);
+      });
+    }));
+
+    const totalVol=[...uniqueItems.values()].reduce((a,i)=>a+i.vol,0);
+    const overBy=totalVol-volIn;
+
+    // Show loading modal
+    const existing=document.getElementById('m-overpack');if(existing)existing.remove();
+    const modal=document.createElement('div');
+    modal.id='m-overpack';modal.className='modal-backdrop';
+    modal.innerHTML=`<div class="modal" style="max-width:500px">
+      <div class="mhead"><div class="mtitle">✦ What to remove?</div><button class="mclose" onclick="document.getElementById('m-overpack').remove()">×</button></div>
+      <div class="msub">Analyzing your ${bag.name}…</div>
+      <div id="overpack-content"><div class="ai-load"><div class="spin"></div>AI is finding the best items to remove or swap…</div></div>
+      <div class="mactions"><button class="btn-o" onclick="document.getElementById('m-overpack').remove()">Close</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+
+    try{
+      // Sort items by volume descending for context
+      const itemList=[...uniqueItems.values()]
+        .sort((a,b)=>b.vol-a.vol)
+        .map(it=>`${it.name} (${it.type}, ~${volL(it.vol,1,1).toFixed(1)}L, worn days: ${[...new Set(it.days)].join(',')})`)
+        .join('\n');
+
+      const raw=await callAI(`I'm packing for a ${trip.duration}-night trip to ${trip.destination}.
+My bag capacity is ${volL(volIn,1,1).toFixed(1)}L but my items take up ${volL(totalVol,1,1).toFixed(1)}L — I'm ${volL(overBy,1,1).toFixed(1)}L over.
+
+Packed items (name, type, volume, days worn):
+${itemList}
+
+Please suggest:
+1. Which specific items to REMOVE — prioritize bulky items worn only 1-2 days, or items that could be re-worn
+2. Which items could be SWAPPED for a lighter/smaller alternative (e.g. swap boots for sandals, puffer for light jacket)
+3. Any items that could DOUBLE UP (e.g. wear the same jeans multiple days)
+
+Be specific and practical. Respond ONLY with JSON, no markdown:
+{"remove":[{"name":"item name","reason":"why to remove","saved":"0.5L"}],"swap":[{"name":"item name","swapFor":"lighter alternative","saved":"1.2L"}],"reuse":[{"name":"item name","tip":"how to re-wear or style differently"}]}`,1500);
+
+      const result=JSON.parse(raw.replace(/```json|```/g,'').trim());
+      const content=document.getElementById('overpack-content');
+      if(!content)return;
+
+      let html='';
+
+      if(result.remove?.length){
+        html+=`<div style="margin-bottom:1rem">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--pink-dark);margin-bottom:8px">🗑️ Remove these items</div>
+          ${result.remove.map(r=>`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 10px;background:var(--pink-pale);border-radius:8px;margin-bottom:5px;gap:8px">
+            <div><div style="font-size:13px;font-weight:600;color:var(--text)">${r.name}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${r.reason}</div></div>
+            <div style="font-size:11px;color:var(--pink-dark);font-weight:600;white-space:nowrap;flex-shrink:0">−${r.saved}</div>
+          </div>`).join('')}
+        </div>`;
+      }
+
+      if(result.swap?.length){
+        html+=`<div style="margin-bottom:1rem">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:8px">🔄 Swap for something smaller</div>
+          ${result.swap.map(s=>`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 10px;background:#fdf7ee;border-radius:8px;margin-bottom:5px;gap:8px">
+            <div><div style="font-size:13px;font-weight:600;color:var(--text)">${s.name} → ${s.swapFor}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Swap for a lighter alternative</div></div>
+            <div style="font-size:11px;color:var(--gold);font-weight:600;white-space:nowrap;flex-shrink:0">−${s.saved}</div>
+          </div>`).join('')}
+        </div>`;
+      }
+
+      if(result.reuse?.length){
+        html+=`<div style="margin-bottom:1rem">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--sage);margin-bottom:8px">♻️ Re-wear these</div>
+          ${result.reuse.map(r=>`<div style="padding:8px 10px;background:#eef5f0;border-radius:8px;margin-bottom:5px">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${r.name}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">${r.tip}</div>
+          </div>`).join('')}
+        </div>`;
+      }
+
+      if(!html)html=`<div style="color:var(--text2);font-size:14px;padding:1rem;text-align:center">Everything looks necessary — try upgrading to a larger bag or removing items manually.</div>`;
+      content.innerHTML=html;
+    }catch(e){
+      const content=document.getElementById('overpack-content');
+      if(content)content.innerHTML=`<div style="color:var(--pink-dark);font-size:14px;padding:1rem">${aiErr(e)}</div>`;
+    }
+  },
+
   async _aiEstimateDims(name,type){
     try{
       const raw=await callAI(`Estimate the tightly packed/folded dimensions in inches for this clothing item: "${name}" (type: ${type}).
@@ -1635,15 +1737,26 @@ Respond ONLY with JSON, no markdown: {"l":7,"w":5,"h":1,"note":"tightly folded t
       }));
       const uniqueCount=uniqueItemIds.size;
       const dimsKnown=d.closet.filter(c=>uniqueItemIds.has(c.id)&&c.dimL).length;
-      const pct=Math.min(100,Math.round(usedIn/volIn*100));
-      const barCls=pct>90?'over':pct>70?'warn':'';
-      const dimNote=dimsKnown<uniqueCount?`<span style="font-size:10px;color:var(--text3)"> · ${dimsKnown}/${uniqueCount} items have exact dims</span>`:'';
+      const rawPct=Math.round(usedIn/volIn*100);
+      const pct=Math.min(100,rawPct);
+      const isOver=rawPct>100;
+      const barCls=rawPct>100?'over':rawPct>85?'over':rawPct>70?'warn':'';
+      const dimNote=dimsKnown<uniqueCount?`<span style="font-size:10px;color:var(--text3)"> · ${dimsKnown}/${uniqueCount} with exact dims</span>`:'';
+      const overflowHtml=isOver?`
+        <div style="background:#fdf0f2;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--pink-dark)">⚠️ Bag is ${rawPct-100}% over capacity!</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">You need to remove ~${volL(usedIn-volIn,1,1).toFixed(1)}L of items</div>
+          </div>
+          <button class="btn-a btn-sm" style="white-space:nowrap;flex-shrink:0" onclick="App.suggestRemovals('${trip.id}',${bi})">✦ What to remove?</button>
+        </div>`:'';
       return `<div class="bag-row">
         <div style="font-size:1.1rem">🧳</div>
         <div class="bag-bar-wrap">
           <div class="bag-bar-label">${bag.name} · ${bag.l}"×${bag.w}"×${bag.h}" · ${volL(bag.l,bag.w,bag.h)}L</div>
           <div class="cap-bar"><div class="cap-fill ${barCls}" style="width:${pct}%"></div></div>
-          <div class="cap-text">${pct}% full · ${uniqueCount} item${uniqueCount!==1?'s':''}${dimNote}</div>
+          <div class="cap-text" style="${isOver?'color:var(--pink-dark);font-weight:600':''}">${rawPct}% full · ${uniqueCount} item${uniqueCount!==1?'s':''}${dimNote}</div>
+          ${overflowHtml}
         </div>
         <button class="ibtn" onclick="App.openEditBag('${trip.id}',${bi})" title="Edit bag dimensions">✏️</button>
         <button class="ibtn" onclick="App.swapBag('${trip.id}',${bi})" title="Swap bag">🔄</button>
