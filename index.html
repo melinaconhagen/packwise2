@@ -467,6 +467,7 @@ select.finput{cursor:pointer}
    <option value="outerwear">Outerwear</option><option value="shoes">Shoes</option><option value="accessories">Accessories</option>
    <option value="swimwear">Swimwear</option><option value="activewear">Activewear</option>
    <option value="underwear">Underwear / Socks</option><option value="sleepwear">Sleepwear</option>
+   <option value="toiletries">Toiletries &amp; Electronics</option>
   </select>
   <label class="flabel" style="margin-top:1rem">Product photo <span style="font-weight:400;text-transform:none;color:var(--text3)">(optional — upload a photo or screenshot of the item)</span></label>
   <div id="c-img-drop" onclick="document.getElementById('c-img-file').click()" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:.8rem;text-align:center;cursor:pointer;transition:.2s;color:var(--text3);font-size:13px">
@@ -1110,7 +1111,7 @@ const App={
   _closetSearch:'',
   rCloset(){
     const d=this.data();
-    const filterTypes=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear','underwear','sleepwear'];
+    const filterTypes=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear','underwear','sleepwear','toiletries'];
     const filterPills=filterTypes.map(t=>`<button class="cf-pill${this._closetFilter===t?' active':''}" onclick="App._setClosetFilter('${t}')">${t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
     const filtered=d.closet.filter(c=>{
       const matchType=this._closetFilter==='all'||c.type===this._closetFilter;
@@ -1556,7 +1557,33 @@ Be specific with colors and styles. Only include clearly visible items.`,
       </div>
     </div>`;
 
-    const tipsHtml=trip.aiTips?`<div class="ai-tips-box"><div class="ai-tips-title">✦ Packing Tips</div><ul class="ai-tips-list">${trip.aiTips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`:'';    const sidebar=`
+    const tipsHtml=trip.aiTips?`<div class="ai-tips-box"><div class="ai-tips-title">✦ Packing Tips</div><ul class="ai-tips-list">${trip.aiTips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`:'';
+
+    // Personal item capacity
+    const pi=trip.personalItem;
+    const piHtml=pi?`
+      <div class="side-widget" style="margin-top:8px">
+        <div class="sw-title">🎒 Personal item</div>
+        <div class="bag-row">
+          <div style="font-size:1.1rem">🎒</div>
+          <div class="bag-bar-wrap">
+            <div class="bag-bar-label">${pi.name} · ${pi.l}"×${pi.w}"×${pi.h}" · ${volL(pi.l,pi.w,pi.h)}L</div>
+            <div class="cap-bar"><div class="cap-fill" style="width:${Math.min(100,Math.round(((pi.items||[]).length*91)/(pi.l*pi.w*pi.h)*100))}%"></div></div>
+            <div class="cap-text">${(pi.items||[]).length} item${(pi.items||[]).length!==1?'s':''}</div>
+          </div>
+          <button class="ibtn" onclick="App.openEditPersonalItem('${trip.id}')" title="Edit">✏️</button>
+          <button class="ibtn red" onclick="App.removePersonalItem('${trip.id}')" title="Remove">✕</button>
+        </div>
+        <button class="btn-o btn-sm" style="margin-top:8px;width:100%" onclick="App.openAddToPersonalItem('${trip.id}')">+ Add item to personal bag</button>
+        ${(pi.items||[]).length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">${(pi.items||[]).map((it,i)=>{
+          const isEMP=it.emoji?.startsWith('EMP:');
+          const thumb=it.image?`<img src="${it.image}" style="width:14px;height:14px;border-radius:3px;object-fit:cover;vertical-align:middle">`:isEMP?EMP.renderEmoji(it.emoji,'0.9rem'):`<span style="font-size:.9rem">${it.emoji||'👜'}</span>`;
+          return `<span class="ob-chip" style="font-size:11px">${thumb} ${it.name}<button onclick="App.removeFromPersonalItem('${trip.id}',${i})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;margin-left:2px;line-height:1">×</button></span>`;
+        }).join('')}</div>`:''}
+      </div>`
+    :`<button class="btn-o btn-sm" style="margin-top:8px;width:100%" onclick="App.openAddPersonalItem('${trip.id}')">🎒 Add personal item bag</button>`;
+
+    const sidebar=`
       ${wxCard}
       ${tipsHtml}
       <div class="side-widget">
@@ -1564,6 +1591,7 @@ Be specific with colors and styles. Only include clearly visible items.`,
         ${bagCapHtml}
         <button class="btn-o btn-sm" style="margin-top:8px;width:100%" onclick="App.addBagToTrip('${trip.id}')">+ Add another bag</button>
       </div>
+      ${piHtml}
       <button class="btn-o" style="width:100%;margin-top:8px;font-size:12px" onclick="App.auditPacking('${trip.id}')">🔍 What am I missing?</button>`;
 
     const haslist=trip.packingList&&trip.packingList.length>0;
@@ -1676,6 +1704,25 @@ Be specific with colors and styles. Only include clearly visible items.`,
       listHtml=progressBar+`<div style="font-size:13px;color:var(--text2);margin-bottom:12px;background:var(--pink-pale);border-radius:8px;padding:8px 12px">
         📦 <strong>${totalUnique} unique item${totalUnique!==1?'s':''} to pack</strong> — items worn multiple days appear once
       </div>`
+      // Personal item section in checklist
+      +(()=>{
+        const pi=trip.personalItem;
+        if(!pi||!pi.items?.length)return '';
+        const piChips=pi.items.map((it,i)=>{
+          const isEMP=it.emoji?.startsWith('EMP:');
+          const thumb=it.image?`<img src="${it.image}" style="width:18px;height:18px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px">`:isEMP?`<span style="vertical-align:middle;margin-right:2px">${EMP.renderEmoji(it.emoji,'1rem')}</span>`:`<span style="vertical-align:middle;margin-right:2px">${it.emoji||'👜'}</span>`;
+          const ckId=`ck-pi-${it.id||i}`;
+          const packed=pi.packedItems?.[it.id||i]||false;
+          return `<div class="check-item-row">
+            <input type="checkbox" class="check-box" ${packed?'checked':''} onchange="App.togglePackedPIItem('${trip.id}','${it.id||i}',this.checked)" id="${ckId}">
+            <label class="check-label${packed?' done':''}" for="${ckId}">${thumb}${it.name} <span style="font-size:11px;color:var(--text3)">→ ${pi.name}</span></label>
+          </div>`;
+        }).join('');
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:8px">🎒 ${pi.name}</div>
+          ${piChips}
+        </div>`;
+      })()
       // Show any day notes as reminders at the top of checklist
       +(()=>{
         const notes=(trip.packingList||[]).filter(day=>day.notes).map(day=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:600;color:var(--pink-dark);white-space:nowrap">Day ${day.day}</span><span style="font-size:12px;color:var(--text2)">${day.notes.replace(/\n/g,' · ')}</span></div>`).join('');
@@ -1792,6 +1839,145 @@ Be specific with colors and styles. Only include clearly visible items.`,
     if(label)label.className='check-label'+(checked?' done':'');
     if(pct===100&&total>0)setTimeout(()=>this.toast('🎉 All packed! Have a great trip!'),200);
   },
+  openAddPersonalItem(tripId){
+    const existing=document.getElementById('m-pi');if(existing)existing.remove();
+    const modal=document.createElement('div');
+    modal.id='m-pi';modal.className='modal-backdrop';
+    modal.innerHTML=`<div class="modal modal-sm">
+      <div class="mhead"><div class="mtitle">🎒 Add Personal Item Bag</div><button class="mclose" onclick="document.getElementById('m-pi').remove()">×</button></div>
+      <div class="msub">A personal item goes under the seat — laptop bag, tote, backpack, etc. Items here don't count toward your main bag capacity.</div>
+      <label class="flabel">Bag name</label>
+      <input class="finput" id="pi-name" placeholder="e.g. Laptop backpack, Tote bag">
+      <div style="background:var(--pink-pale);border-radius:var(--radius-sm);padding:.7rem 1rem;margin-top:1rem;font-size:11px;color:var(--text2);line-height:1.7">
+        📐 <strong>L</strong> = longest side · <strong>W</strong> = front to back · <strong>H</strong> = side to side<br>
+        <span style="color:var(--text3)">Typical personal item max: 18×14×8</span>
+      </div>
+      <div class="frow" style="margin-top:.8rem">
+        <div><label class="flabel">L (in)</label><input class="finput" type="number" id="pi-l" placeholder="18" oninput="App._calcPIVol()"></div>
+        <div><label class="flabel">W (in)</label><input class="finput" type="number" id="pi-w" placeholder="14" oninput="App._calcPIVol()"></div>
+      </div>
+      <div class="frow">
+        <div><label class="flabel">H (in)</label><input class="finput" type="number" id="pi-h" placeholder="8" oninput="App._calcPIVol()"></div>
+        <div><label class="flabel">Volume</label><div style="padding:11px 13px;font-size:14px;color:var(--text3)" id="pi-vol">—</div></div>
+      </div>
+      <div class="mactions">
+        <button class="btn-o" onclick="document.getElementById('m-pi').remove()">Cancel</button>
+        <button class="btn-a" onclick="App.savePersonalItem('${tripId}')">Add Personal Item</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+  },
+
+  _calcPIVol(){
+    const l=+document.getElementById('pi-l')?.value||0;
+    const w=+document.getElementById('pi-w')?.value||0;
+    const h=+document.getElementById('pi-h')?.value||0;
+    const el=document.getElementById('pi-vol');
+    if(el)el.textContent=l&&w&&h?`${volL(l,w,h)}L`:'—';
+  },
+
+  savePersonalItem(tripId){
+    const name=(document.getElementById('pi-name')?.value||'').trim()||'Personal item';
+    const l=+document.getElementById('pi-l')?.value||18;
+    const w=+document.getElementById('pi-w')?.value||14;
+    const h=+document.getElementById('pi-h')?.value||8;
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    if(!trip.personalItem)trip.personalItem={items:[]};
+    trip.personalItem.name=name;trip.personalItem.l=l;trip.personalItem.w=w;trip.personalItem.h=h;
+    this.save(d);document.getElementById('m-pi')?.remove();this.rPacking();this.toast('🎒 Personal item saved!');
+  },
+
+  openEditPersonalItem(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);const pi=trip.personalItem;if(!pi)return;
+    const existing=document.getElementById('m-pi');if(existing)existing.remove();
+    const modal=document.createElement('div');
+    modal.id='m-pi';modal.className='modal-backdrop';
+    modal.innerHTML=`<div class="modal modal-sm">
+      <div class="mhead"><div class="mtitle">✏️ Edit Personal Item</div><button class="mclose" onclick="document.getElementById('m-pi').remove()">×</button></div>
+      <label class="flabel">Bag name</label>
+      <input class="finput" id="pi-name" value="${pi.name}">
+      <div class="frow" style="margin-top:.8rem">
+        <div><label class="flabel">L (in)</label><input class="finput" type="number" id="pi-l" value="${pi.l}" oninput="App._calcPIVol()"></div>
+        <div><label class="flabel">W (in)</label><input class="finput" type="number" id="pi-w" value="${pi.w}" oninput="App._calcPIVol()"></div>
+      </div>
+      <div class="frow">
+        <div><label class="flabel">H (in)</label><input class="finput" type="number" id="pi-h" value="${pi.h}" oninput="App._calcPIVol()"></div>
+        <div><label class="flabel">Volume</label><div style="padding:11px 13px;font-size:14px;color:var(--text3)" id="pi-vol">${volL(pi.l,pi.w,pi.h)}L</div></div>
+      </div>
+      <div class="mactions">
+        <button class="btn-o" onclick="document.getElementById('m-pi').remove()">Cancel</button>
+        <button class="btn-a" onclick="App.savePersonalItem('${tripId}')">Save</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+  },
+
+  removePersonalItem(tripId){
+    confirmDlg('Remove personal item?','This will also remove all items assigned to it.','🎒','Remove').then(()=>{
+      const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+      delete trip.personalItem;this.save(d);this.rPacking();
+    }).catch(()=>{});
+  },
+
+  openAddToPersonalItem(tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    if(!d.closet.length){this.toast('Your closet is empty — add items first!');return;}
+    const existing=document.getElementById('m-pi-add');if(existing)existing.remove();
+    const types=['all','accessories','toiletries','outerwear','shoes'];
+    const filterBtns=types.map(t=>`<button class="cp-fchip${t==='all'?' active':''}" onclick="App._filterPIPicker('${t}','${tripId}')" style="font-size:10px">${t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
+    const modal=document.createElement('div');
+    modal.id='m-pi-add';modal.className='modal-backdrop';
+    modal.innerHTML=`<div class="modal" style="max-width:480px">
+      <div class="mhead"><div class="mtitle">🎒 Add to Personal Item</div><button class="mclose" onclick="document.getElementById('m-pi-add').remove()">×</button></div>
+      <div class="msub">Pick items to go in your ${trip.personalItem?.name||'personal item'}</div>
+      <div class="cp-filter" id="pi-filter" style="margin-bottom:8px">${filterBtns}</div>
+      <div class="closet-picker" id="pi-picker"></div>
+      <div class="mactions"><button class="btn-o" onclick="document.getElementById('m-pi-add').remove()">Done</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+    this._renderPIPicker('all',tripId);
+  },
+
+  _filterPIPicker(type,tripId){
+    document.querySelectorAll('#pi-filter .cp-fchip').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===type||(type==='all'&&b.textContent==='All')));
+    this._renderPIPicker(type,tripId);
+  },
+
+  _renderPIPicker(filter,tripId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===(tripId||this.tripId));
+    const el=document.getElementById('pi-picker');if(!el)return;
+    const piItems=trip?.personalItem?.items||[];
+    const items=filter==='all'?d.closet:d.closet.filter(c=>c.type===filter);
+    el.innerHTML=items.map(c=>{
+      const inPI=piItems.some(i=>i.id===c.id);
+      const isEMP=c.emoji?.startsWith('EMP:');
+      const thumb=c.image?`<img class="cp-img" src="${c.image}">`:isEMP?`<div style="width:44px;height:44px;margin:0 auto 3px;display:flex;align-items:center;justify-content:center">${EMP.renderEmoji(c.emoji,'1.5rem')}</div>`:`<div class="cp-emo">${c.emoji||'👜'}</div>`;
+      return `<div class="cp-item${inPI?' selected':''}" onclick="App._togglePIItem('${tripId||this.tripId}','${c.id}')">
+        ${thumb}
+        <div class="cp-name">${c.name}</div>
+        ${inPI?`<div style="font-size:9px;color:var(--pink-dark);margin-top:2px">✓ in bag</div>`:''}
+      </div>`;
+    }).join('');
+  },
+
+  _togglePIItem(tripId,itemId){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);if(!trip.personalItem)return;
+    const item=d.closet.find(c=>c.id===itemId);if(!item)return;
+    const idx=trip.personalItem.items.findIndex(i=>i.id===itemId);
+    if(idx>=0)trip.personalItem.items.splice(idx,1);
+    else trip.personalItem.items.push({id:item.id,name:item.name,emoji:item.emoji,image:item.image});
+    this.save(d);
+    const activeFilter=document.querySelector('#pi-filter .cp-fchip.active')?.textContent?.toLowerCase()||'all';
+    this._renderPIPicker(activeFilter,tripId);
+    this.rPacking();
+  },
+
+  removeFromPersonalItem(tripId,idx){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    trip.personalItem?.items?.splice(idx,1);
+    this.save(d);this.rPacking();
+  },
+
   toggleDayNotes(tripId,dayIdx){
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
     const day=trip.packingList[dayIdx];
@@ -1836,6 +2022,14 @@ Be specific with colors and styles. Only include clearly visible items.`,
     delete day.notes;delete day._notesOpen;delete day._notesDraft;
     this.save(d);this.rPacking();
   },
+  togglePackedPIItem(tripId,itemId,checked){
+    const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
+    if(!trip.personalItem)return;
+    if(!trip.personalItem.packedItems)trip.personalItem.packedItems={};
+    trip.personalItem.packedItems[itemId]=checked;
+    this.save(d);
+  },
+
   togglePackedItem(tripId,itemId,checked){
     const d=this.data();const trip=d.trips.find(t=>t.id===tripId);
     (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
@@ -1891,6 +2085,7 @@ Be specific with colors and styles. Only include clearly visible items.`,
     (trip.packingList||[]).forEach(day=>(day.outfits||[]).forEach(o=>{
       delete o.packed;delete o.packedItems;delete o.packedCustom;
     }));
+    if(trip.personalItem)delete trip.personalItem.packedItems;
     this.save(d);this.rPacking();this.toast('Checklist reset ↺');
   },
 
@@ -1991,7 +2186,7 @@ Respond ONLY with JSON (no markdown):
     const d=this.data();
     this._pickerMode=mode;
     this._pickerFilter='all';
-    const types=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear'];
+    const types=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear','toiletries'];
     const filterEl=document.getElementById(filterId);
     if(filterEl){
       filterEl.innerHTML=types.map(t=>`<button class="cp-fchip${t==='all'?' active':''}" onclick="App._filterPicker('${t}','${filterId}','${pickerId}')">${t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
@@ -2148,7 +2343,7 @@ Respond ONLY with JSON (no markdown):
     if(!d.closet.length){this.toast('Your closet is empty — add items first!');return;}
     const existing=document.getElementById('m-singleitem');
     if(existing)existing.remove();
-    const types=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear'];
+    const types=['all','tops','bottoms','dresses','outerwear','shoes','accessories','swimwear','activewear','toiletries'];
     const filterBtns=types.map(t=>`<button class="cp-fchip${t==='all'?' active':''}" onclick="App._filterSinglePicker('${t}')">${t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
     const modal=document.createElement('div');
     modal.id='m-singleitem';
